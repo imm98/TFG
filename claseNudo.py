@@ -11,140 +11,148 @@ import copy #Para el constructor de copia que no hace falta
 
 from turtle import *
 
+setup(2000, 600, 0,0)
+
+speed(7)
 
 
 class Nudo:
     def __init__(self, *numeros):
-       
-        self.numeros=[]
-        for x in range(len(numeros)):
-            self.numeros.append(numeros[x])
-        print(self.numeros)
+        '''
+        El único atributo de la clase Nudo será una lista llamada numeros que será privada, que definirá el nudo.
+
+        Argumentos:
+            *numeros: Conjunto de números pares positivos y negativos consecutivos en valor absoluto y sin repetición (empezando por el 2)
         
-    def copy(self):
-        '''Devuelve un nudo con exactamente
-        los mismos puntos que el que se le 
-        pasa por argumento'''
-        return copy.deepcopy(self)
-        '''return Nudo(self.numeros.copy())'''
+        '''
+        self.__numeros=[]
+        for x in range(len(numeros)):
+            self.__numeros.append(numeros[x])
+        print(self.__numeros)
 
     def numero_arcos_superiores(self):
-        contador=0
-        if (self.numeros[0]>0):
-            superior_global=False
+        '''
+        Devuelve el número de arcos superiores que tendrá el nudo. 
+        '''
+
+        contador=0  #Esta variable almacenará la suma de arcos superiores e inferiores del nudo 
+        if (self.__numeros[0]>0):
+            superior_global=False       #Esta variable almacenará el estado del último cruce que hems recorrido
         else:
             superior_global=True
         
-        for x in range(len(self.numeros)-1):
+        for x in range(len(self.__numeros)-1):
             
-            if 2*x+2 not in self.numeros:   #Esto se hace para ver si los cruces de los números pares son superiores o inferiores. Si son inferiores...(es decir, si el número par no pertenece a la lista(dado que pertenece su opuesto))
+            if 2*x+2 not in self.__numeros:   #Esto se hace para ver si los cruces de los números pares son superiores o inferiores. Si son inferiores...(es decir, si el número par no pertenece a la lista(dado que pertenece su opuesto))
                 if (superior_global==True):
-                    print (2*x+2)
-                    print ("False")
                     contador+=1
                     superior_global=False
             else:                           #Si son superiores
                 if (superior_global==False):
-                    print (2*x+2)
-                    print ("True")
                     contador+=1
                     superior_global=True
             
-            if self.numeros[x+1]>0:      #Esto se hace para ver si los cruces de los números impares son superiores o inferiores. Si son inferiores...
+            if self.__numeros[x+1]>0:      #Esto se hace para ver si los cruces de los números impares son superiores o inferiores. Si son inferiores...
                    
                 if (superior_global==True):  
-                    
-                    print (2*x+3)
-                    print("False")
                     contador+=1
                     superior_global=False
             else:                       #Si son superiores
                 if (superior_global==False):
-                    
-                    print(2*x+3)
-                    print("True")
                     contador+=1
                     superior_global=True
         
-        if 2*len(self.numeros) not in self.numeros:
+        #Con esto comprobamos el último cruce 
+        if 2*len(self.__numeros) not in self.__numeros:
             if (superior_global==True):
-                print(2*len(self.numeros))
                 contador+=1
                 superior_global=False
         else:                           #Si son superiores
             if (superior_global==False):
-                print(2*len(self.numeros))
                 contador+=1
                 superior_global=True
         
-        if (self.numeros[0]>0):
+        #Con esto el primer cruce
+        if (self.__numeros[0]>0):
             if (superior_global==True):
-                print (1)
                 contador+=1
                 superior_global=False
         else:
             if (superior_global==False):
-                print(1)
                 contador+=1
                 superior_global=True
-        return(contador/2)
 
+        return(int(contador/2)) #Lo dividimos por dos ya que solo queremos el número de arcos superiores y dado que el número de arcos superiores e inferiores será el mismo 
 
-    def divide_dos_permutaciones(self):
-        maximo=3
-        indice_maximo=-1   #Es -2 para que luego no haya problemas en la otra función 
-        for x in range(len(self.numeros)-1):
-            if abs(self.numeros[x]) > maximo:
-                maximo=abs(self.numeros[x])
+    def __dividir_en_dos_subpermutaciones(self):
+        '''
+        Devuelve el índice de la secuencia a partir del cuál la secuencia dada por __numeros se puede separar en dos subpermutaciones
+        En caso de que no se pueda separa en dos subpermutaciones se devuelve el valor -1
+
+        Ejemplo:
+            >>> x=Nudo(4,6,2, 10, 12, 8)
+            >>> x.__dividir_en_dos_subpermutaciones()
+            2       #Ya que se puede dividir en (4, 6, 2) y (10, 12, 8) y el 2 ocupa la posición 2 en la lista
+
+            >>> x=Nudo (8,10,2,12,4, 6)
+            >>> x.__dividir_en_dos_subpermutaciones()
+            -1
+        '''
+
+        maximo=3        #Aquí almacenaremos el máximo valor par en valor absoluto de la lista __numeros conforma la vayamos recorriendo
+        indice_maximo=-1    
+        for x in range(len(self.__numeros)-1):
+            if abs(self.__numeros[x]) > maximo: 
+                maximo=abs(self.__numeros[x])
             
-            if ((2*x+2)==maximo):
+            if ((2*x+2)==maximo):       #Si coincide el número de cruces que hemos recorrido con el valor máximo significará que se puede dividir la permutación en dos subpermutaciones 
                 indice_maximo=x
         return indice_maximo
-
-
+    
     def dividir_nudo_en_arcos(self, puntos):
+
+        '''
+        El objetivo de esta función es poder dividir el conjunto de puntos obtenidos de la función obtener_puntos_nudo_dowker 
+        en puntos pertenecientes a un arco superior o a un arco inferior.
         
+        Para ello iremos recorriendo esa secuencia de puntos y determinando cuando se pasa de un arco inferior a uno superior y viceversa.
         
+        Añadiremos puntos a la lista de puntos si es necesario, y esta función devolverá una lista de índices donde cada índice indicará una posición de
+        la lista de puntos en la que se debe realizar el cambio de un arco superior a un arco inferior o viceversa
         
+        Args:
+            puntos: Lista obtenida de la función obtener_puntos_nudo_dowker 
+        '''
         terminado=False
         contador_global=1
         
-        contador_aux=1
+        contador_aux=1          
         punto_final=[-0.5,0]
         vector_cambio=[]
 
-        if (self.numeros[0]>0):
+        if (self.__numeros[0]>0):
             superior=False
             superior_inicial=False
         else:
             superior=True
             superior_inicial=True
-            
         
-        print ('superior: '+ str(superior))
+        
         while (terminado ==False):
             if (puntos[contador_global]==punto_final):
                 terminado=True
             else:
                 if superior:
                     if (contador_aux==1):
-                        if (puntos[contador_global]!= puntos[contador_global+1]):   #Significa que hemos llegado a un cruce inferior por lo tanto hay que dibujar 
-                            print ('puntos[contador_global] i: '+ str (puntos[contador_global]) + ' puntos[contador_global + 1] i: '+ str (puntos[contador_global+1]))
+                        if (puntos[contador_global]!= puntos[contador_global+1]):   #Significa que hemos llegado a un cruce inferior por lo tanto hay que añadir un nuevo punto  
                             
-                        
-
-                            #Hay que añadir los puntos y dibujar 
-                            print ('Hay que aniadir los puntos i')
-                            punto_aux=[(puntos[contador_global][0]+puntos[contador_global-1][0])/2, (puntos[contador_global][1]+puntos[contador_global-1][1])/2]
+                            punto_aux=[(puntos[contador_global][0]+puntos[contador_global-1][0])/2, (puntos[contador_global][1]+puntos[contador_global-1][1])/2]  #Tomamos el punto medio que será el punto que añadiremos
                             puntos.insert(contador_global, punto_aux)
-                            puntos.insert(contador_global, punto_aux)
+                            puntos.insert(contador_global, punto_aux) #Lo añadimos dos veces ya que dicho punto formará parte de dos aristas del nudo, perteneciendo una de ellas a un arco horizontal y la otra a un arco vertical
                             contador_global+=2
                             
                             vector_cambio.append(contador_global-2)
-                            
-                                
 
-                            
                             superior=False
                             
                         else:
@@ -155,9 +163,8 @@ class Nudo:
                 else:
                     if (puntos[contador_global]== puntos [contador_global+1]):
                         if (puntos[contador_global-1][0] < puntos[contador_global][0] and puntos[contador_global][0] < puntos[contador_global+2][0]):
-                            print ('puntos[contador_global] j: '+ str (puntos[contador_global]))
-                            #Hay que añadir los puntos y dibujar 
-                            print ('Hay que aniadir los puntos i')
+                            
+                            #Hay que añadir el punto medio dos veces                             
                             punto_aux=[(puntos[contador_global][0]+puntos[contador_global-1][0])/2, (puntos[contador_global][1]+puntos[contador_global-1][1])/2]
                             puntos.insert(contador_global, punto_aux)
                             puntos.insert(contador_global, punto_aux)
@@ -170,9 +177,9 @@ class Nudo:
                             
 
                         if (puntos[contador_global-1][1] < puntos[contador_global][1] and puntos[contador_global][1] < puntos[contador_global+2][1]):
-                            print ('puntos[contador_global] j: '+ str (puntos[contador_global]))
-                            #Hay que añadir los puntos y dibujar 
-                            print ('Hay que aniadir los puntos i')
+                            
+                            #Hay que añadir el punto medio dos veces 
+                            
                             punto_aux=[(puntos[contador_global][0]+puntos[contador_global-1][0])/2, (puntos[contador_global][1]+puntos[contador_global-1][1])/2]
                             puntos.insert(contador_global, punto_aux)
                             puntos.insert(contador_global, punto_aux)
@@ -185,9 +192,8 @@ class Nudo:
                             
                         
                         if (puntos[contador_global-1][0] > puntos[contador_global][0] and puntos[contador_global][0] > puntos[contador_global+2][0]):
-                            print ('puntos[contador_global] j: '+ str (puntos[contador_global]))
-                            #Hay que añadir los puntos y dibujar 
-                            print ('Hay que aniadir los puntos i')
+                            
+                            #Hay que añadir el punto medio dos veces  
                             punto_aux=[(puntos[contador_global][0]+puntos[contador_global-1][0])/2, (puntos[contador_global][1]+puntos[contador_global-1][1])/2]
                             puntos.insert(contador_global, punto_aux)
                             puntos.insert(contador_global, punto_aux)
@@ -200,9 +206,8 @@ class Nudo:
                             
                         
                         if (puntos[contador_global-1][1] > puntos[contador_global][1] and puntos[contador_global][1] > puntos[contador_global+2][1]):
-                            print ('puntos[contador_global] j: '+ str (puntos[contador_global]))
-                            #Hay que añadir los puntos y dibujar 
-                            print ('Hay que aniadir los puntos i')
+
+                            #Hay que añadir el punto medio dos veces   
                             punto_aux=[(puntos[contador_global][0]+puntos[contador_global-1][0])/2, (puntos[contador_global][1]+puntos[contador_global-1][1])/2]
                             puntos.insert(contador_global, punto_aux)
                             puntos.insert(contador_global, punto_aux)
@@ -215,21 +220,68 @@ class Nudo:
                             
                 
                 contador_global+=1
-        #print('Contador_global: '+ str (contador_global)+ ' len(puntos): '+ str(len(puntos)) + ' Superior_inicial: '+ str(superior_inicial)+ ' superior: '+ str(superior))
         if ((superior==True and superior_inicial==False) or (superior==False and superior_inicial==True)):
             vector_cambio.insert(0, 0)
             vector_cambio.append(contador_global)
 
-        print(puntos)
+        
             
         return vector_cambio
-                
+    
+    def dibujar_nudo(self, puntos):
+        '''
+        Se utiliza el módulo turtle de python para dibujar el nudo dado por los puntos obtenidos de la función obtener_puntos_nudo_dowker 
+        en una ventana distinta a la ventana de IDLE. 
+        Una flecha indicará la orientación del nudo.
 
+        Args:
+            puntos: Lista obtenida de la función obtener_puntos_nudo_dowker (y modificada posterioremente por la función dividir_nudo_en_arcos)
+        '''
+
+        
+        title("Nudo obtenido a través de la notación Dowker")
+        contador=0
+        penup()
+        for x in puntos:
+            if (contador % 2==0):
+                punto1=(100*x[0], 100*x[1])
+            else:               #Solo dibujaremos la arista cuando tengamos los dos puntos de esta almacenados
+                punto2=(100*x[0], 100*x[1])
+                goto(punto1)
+                pendown()
+                goto(punto2)
+                penup()
+            contador+=1
+
+        #Esto es para dibujar la flecha, que indicará la orientación del nudo
+        penup()
+        punto_aux=[-0.38*100, 0.07*100]
+        goto(punto_aux)
+        begin_fill()
+        pendown()
+        punto_aux=[-0.38*100, -0.07*100]
+        goto(punto_aux)
+        punto_aux=[-0.22*100, 0.0]
+        goto(punto_aux)
+        punto_aux=[-0.38*100, 0.07*100]
+        goto(punto_aux)
+        end_fill()
+
+        hideturtle()
+        exitonclick()
+        Screen().bye()
 
     def dibujar_nudo_arcos(self, puntos, numeros_cambio):
-        print('Los puntos son: ')
-        print (puntos)
-        if (self.numeros[0]>0):
+        '''
+        Se dibuja el nudo dado por los puntos obtenidos de la función obtener_puntos_nudo_dowker en una ventana emergente.
+        En dicho dibujo, se representarán con color rojo los arcos superiores y con color azul los arcos inferiores.
+        Una flecha indicará la orientación del nudo. 
+
+        Args: 
+            puntos: Lista obtenida de la función obtener_puntos_nudo_dowker (y modificada posterioremente por la función dividir_nudo_en_arcos) 
+            numeros_cambio: Lista de índices obtenida de la función dividir_nudo_en_arcos.
+        '''
+        if (self.__numeros[0]>0):
             superior_inicial=False  #Esta variable se utiliza para saber de que color debemos dibujar la flecha 
             superior=False
             pencolor("red")
@@ -238,10 +290,8 @@ class Nudo:
             superior=True
             pencolor("blue")
 
-        setup(1000, 480, 500, 240)
         title("Nudo dividido en arcos superiores e inferiores")
         colormode(255)
-        speed(7)
         contador=0
         penup()
         pensize(3)
@@ -296,6 +346,23 @@ class Nudo:
         Screen().bye()
 
     def obtener_aristas(self, puntos):
+        '''
+        Dada la lista de puntos del nudo, obtiene las aristas horizontales y verticales de este y las devuelve,
+        en una lista con dos elementos, siendo el primero de ellos una lista de las aristas horizontales y el segundo 
+        una lista de las aristas verticales.
+
+        Cada arista horizontal será una lista de 3 números [y, x_1, x_2] donde el primero de ellos será la coordenada 'y' de la arista horizontal, 
+        el segundo elemento será la coordenada 'x' del vértice de la arista con menor valor y el tercero será la coordenada 'x' del vértice de la arista 
+        con mayor valor.
+
+        Cada arista vertical será una lista de 3 números [x, y_1, y_2] donde el primero de ellos será la coordenada 'x' de la arista vertical, 
+        el segundo elemento será la coordenada 'y' del vértice de la arista con menor valor y el tercero será la coordenada 'y' del vértice de la arista 
+        con mayor valor.
+
+        Args:
+            puntos: Lista obtenida de la función obtener_puntos_nudo_dowker (y modificada posterioremente por la función dividir_nudo_en_arcos).
+        '''
+
         punto_inicial=puntos[0]
         horizontal=True
         aristas_horizontales=[]
@@ -338,10 +405,24 @@ class Nudo:
         aristas.append(aristas_verticales)
         return aristas
 
-    def obtener_aristas_inferiores(self, puntos, vector_cambio):
+    def __obtener_aristas_inferiores(self, puntos, vector_cambio):
+        '''
+        Dada la lista de puntos del nudo, obtiene las aristas horizontales y verticales de los arcos inferiores de este y las devuelve,
+        en una lista con dos elementos, siendo el primero de ellos una lista de las aristas horizontales y el segundo 
+        una lista de las aristas verticales, estando las aristas horizontales y verticales en el mismo formato que la función anterior.
+
+        Estas aristas se utilizarán para, a la hora de determinar los caminos v_i, comprobar que dichos caminos no se intersecten con ninguna arista inferior o
+        con ningún otro camino v_j j!=i
+
+
+        Args:
+            puntos: Lista obtenida de la función obtener_puntos_nudo_dowker (y modificada posterioremente por la función dividir_nudo_en_arcos)
+            vector_cambio: Lista de índices obtenida de la función dividir_nudo_en_arcos.
+        '''
+
         aristas_horizontales=[]
         aristas_verticales=[]
-        if (self.numeros[0]>0):
+        if (self.__numeros[0]>0):
             superior=False
             punto_inicial=puntos[0]
             horizontal=True
@@ -419,10 +500,24 @@ class Nudo:
         aristas.append(aristas_verticales)
         return aristas
 
-    def obtener_aristas_superiores(self, puntos, vector_cambio):
+    def __obtener_aristas_superiores(self, puntos, vector_cambio):
+        '''
+        Dada la lista de puntos del nudo, obtiene las aristas horizontales y verticales de los arcos superiores de este y las devuelve,
+        en una lista con dos elementos, siendo el primero de ellos una lista de las aristas horizontales y el segundo 
+        una lista de las aristas verticales, estando las aristas horizontales y verticales en el mismo formato que la función obtener_aristas.
+
+        Estas aristas se utilizarán para, a la hora de determinar los caminos u_i, comprobar que dichos caminos no se intersecten con ninguna arista superior ni 
+        con otros caminos u_j j!=i.
+
+
+        Args:
+            puntos: Lista obtenida de la función obtener_puntos_nudo_dowker (y modificada posterioremente por la función dividir_nudo_en_arcos)
+            vector_cambio: Lista de índices obtenida de la función dividir_nudo_en_arcos.
+        '''
+
         aristas_horizontales=[]
         aristas_verticales=[]
-        if (self.numeros[0]>0):
+        if (self.__numeros[0]>0):
             superior=False
             
         else:
@@ -500,19 +595,331 @@ class Nudo:
         aristas.append(aristas_verticales)
         return aristas
 
-    def coincidir_punto_y_arista(coordenada_punto, arista):
-        if ((arista[2] > (coordenada_punto - 0.2)) and (arista[1] < (coordenada_punto+0.2))):
-            return True
-        else: 
-            return False
+    def __obtener_aristas_inferiores_ordenadas(self, puntos, vector_cambio):
+        '''
+        Dada la lista de puntos del nudo, obtiene las aristas horizontales y verticales de los arcos inferiores de este y las devuelve,
+        en una lista con dos elementos, siendo el primero de ellos una lista de las aristas horizontales y el segundo 
+        una lista de las aristas verticales.
 
-    def coincidir_puntos_y_arista(self, coordenada_punto1, coordenada_punto2, arista):
+        En este caso, el formato de las aristas horizontales y verticales devueltas es:
+
+        Cada arista horizontal será una lista de 3 números [y, x_1, x_2] donde el primero de ellos será la coordenada 'y' de la arista horizontal, 
+        el segundo elemento será la coordenada 'x' del primer vértice de la arista que ha sido recorrido (es decir, el que se encuentra antes en la lista de puntos)
+        y el tercero será la coordenada 'x' del segundo vértice de la arista que ha sido recorrido.
+        
+        Cada arista vertical será una lista de 3 números [x, y_1, y_2] donde el primero de ellos será la coordenada 'x' de la arista vertical, 
+        el segundo elemento será la coordenada 'y' del primer vértice de la arista que ha sido recorrido (es decir, el que se encuentra antes en la lista de puntos)
+        y el tercero será la coordenada 'y' del segundo vértice de la arista que ha sido recorrido.
+
+        Estas aristas se utilizarán para, a la hora de calcular la presentación inferior del nudo, tener en cuenta el sentido de los cruces de los caminos u_i con las
+        aristas inferiores del nudo. 
+
+
+        Args:
+            puntos: Lista obtenida de la función obtener_puntos_nudo_dowker (y modificada posterioremente por la función dividir_nudo_en_arcos)
+            vector_cambio: Lista de índices obtenida de la función dividir_nudo_en_arcos.
+        '''
+
+        aristas_i=[]
+        aristas_horizontales_i=[]
+        aristas_verticales_i=[]
+        aristas=[]
+        valor_salir=-1   #Este valor servirá para en caso de que tomemos las últimas aristas del nudo para meterlas como dentro del primer conjunto posterioremente no analizarlas
+        
+        if (self.__numeros[0]>0):
+            superior=False     
+        else:
+            superior=True
+        
+        if (superior==False):
+            if 0 not in vector_cambio:
+                valor_salir=vector_cambio[len(vector_cambio)-1]
+                indice_partida=vector_cambio[len(vector_cambio)-1]
+                punto_inicial=puntos[indice_partida]
+                if (puntos[indice_partida-1][0] != puntos[indice_partida][0]):
+                    horizontal=True
+                else:
+                    horizontal=False
+
+                for i in range(len(puntos) - indice_partida-1):
+                    if horizontal:
+                        if (puntos[indice_partida+i+1][1] != punto_inicial[1]):
+                            horizontal=False
+                            
+                            
+                            arista_h_aux=[punto_inicial[1], punto_inicial[0], puntos[indice_partida+i][0]]
+
+                            punto_inicial=puntos[indice_partida+i]
+                            
+                            aristas_horizontales_i.append(arista_h_aux)
+                    
+                    else:
+                        if (puntos[indice_partida+i+1][0] != punto_inicial[0]):
+                            horizontal=True
+                            
+                            arista_v_aux=[punto_inicial[0], punto_inicial[1], puntos[indice_partida+i][1]]
+        
+                            punto_inicial=puntos[indice_partida+i]
+                            aristas_verticales_i.append(arista_v_aux)
+
+                arista_v_aux=[punto_inicial[0], punto_inicial[1], puntos[len(puntos)-1][1]]
+                aristas_verticales_i.append(arista_v_aux)
+
+            punto_inicial=puntos[0]
+            horizontal=True
+
+        condicion_salir=False
+        for x in range(len(puntos) - 1):
+            if (condicion_salir==False):
+                if (superior==False):
+                    if horizontal:
+                        if (puntos[x+1][1] != punto_inicial[1]):
+                            horizontal=False
+                            
+                            
+                            arista_h_aux=[punto_inicial[1], punto_inicial[0], puntos[x][0]]
+                            
+
+                            punto_inicial=puntos[x]
+                            
+                            aristas_horizontales_i.append(arista_h_aux)
+                    
+                    else:
+                        if (puntos[x+1][0] != punto_inicial[0]):
+                            horizontal=True
+                            
+                            
+                            arista_v_aux=[punto_inicial[0], punto_inicial[1], puntos[x][1]]
+                            
+                            punto_inicial=puntos[x]
+                            aristas_verticales_i.append(arista_v_aux)
+
+                if (x in vector_cambio and x!=0):
+                    if (superior==False): #Si estabamos con los arcos inferiores hay que meter el último punto 
+                        if horizontal:
+                            if (punto_inicial[0] != puntos[x][0]): #Para ver que no es el mismo punto 
+
+                                
+                                arista_h_aux=[punto_inicial[1], punto_inicial[0], puntos[x][0]]
+
+                                aristas_horizontales_i.append(arista_h_aux)
+                        else:
+                            if(punto_inicial[1] != puntos[x][1]):
+                                arista_v_aux=[punto_inicial[0], punto_inicial[1], puntos[x][1]]
+                                
+                                aristas_verticales_i.append(arista_v_aux)
+
+                        aristas_i.append(aristas_horizontales_i)
+                        aristas_i.append(aristas_verticales_i)
+                        aristas.append(aristas_i)
+
+                        aristas_i=[]
+                        aristas_horizontales_i=[]
+                        aristas_verticales_i=[]
+                        superior=True
+                    else:
+                        if (puntos[x+2][1] != puntos[x][1]):
+                            horizontal=False
+                        else:
+                            horizontal=True
+                        
+                        punto_inicial=puntos[x]
+                        superior=False
+
+                    if (x==valor_salir):
+                        condicion_salir=True
+        
+        if (condicion_salir==False):
+            if (superior==False):
+                
+                arista_v_aux=[-0.5, punto_inicial[1], 0]
+                
+
+                aristas_verticales_i.append(arista_v_aux)
+                aristas_i.append(aristas_horizontales_i)
+                aristas_i.append(aristas_verticales_i)
+                aristas.append(aristas_i)
+        
+        return aristas
+
+    def __obtener_aristas_superiores_ordenadas(self, puntos, vector_cambio):
+        '''
+        Dada la lista de puntos del nudo, obtiene las aristas horizontales y verticales de los arcos superiores de este y las devuelve,
+        en una lista con dos elementos, siendo el primero de ellos una lista de las aristas horizontales y el segundo 
+        una lista de las aristas verticales.
+
+        En este caso, el formato de las aristas horizontales y verticales devueltas es:
+
+        Cada arista horizontal será una lista de 3 números [y, x_1, x_2] donde el primero de ellos será la coordenada 'y' de la arista horizontal, 
+        el segundo elemento será la coordenada 'x' del primer vértice de la arista que ha sido recorrido (es decir, el que se encuentra antes en la lista de puntos)
+        y el tercero será la coordenada 'x' del segundo vértice de la arista que ha sido recorrido.
+        
+        Cada arista vertical será una lista de 3 números [x, y_1, y_2] donde el primero de ellos será la coordenada 'x' de la arista vertical, 
+        el segundo elemento será la coordenada 'y' del primer vértice de la arista que ha sido recorrido (es decir, el que se encuentra antes en la lista de puntos)
+        y el tercero será la coordenada 'y' del segundo vértice de la arista que ha sido recorrido.
+
+        Estas aristas se utilizarán para, a la hora de calcular la presentación superior del nudo, tener en cuenta el sentido de los cruces de los caminos v_i con las
+        aristas superiores del nudo. 
+
+
+        Args:
+            puntos: Lista obtenida de la función obtener_puntos_nudo_dowker (y modificada posterioremente por la función dividir_nudo_en_arcos)
+            vector_cambio: Lista de índices obtenida de la función dividir_nudo_en_arcos.
+        '''
+
+        aristas_i=[]
+        aristas_horizontales_i=[]
+        aristas_verticales_i=[]
+        aristas=[]
+        valor_salir=-1   #Este valor servirá para en caso de que tomemos las últimas aristas del nudo para meterlas como dentro del primer conjunto posterioremente no analizarlas
+        if (self.__numeros[0]>0):
+            superior=False
+            
+        else:
+            superior=True
+            
+        if (superior==True):
+            if 0 not in vector_cambio:
+                valor_salir=vector_cambio[len(vector_cambio)-1]
+                indice_partida=vector_cambio[len(vector_cambio)-1]
+                punto_inicial=puntos[indice_partida]
+                if (puntos[indice_partida-1][0] != puntos[indice_partida][0]):
+                    horizontal=True
+                else:
+                    horizontal=False
+
+                for i in range(len(puntos) - indice_partida-1):
+                    if horizontal:
+                        if (puntos[indice_partida+i+1][1] != punto_inicial[1]):
+                            horizontal=False
+                            
+                            
+                            arista_h_aux=[punto_inicial[1], punto_inicial[0], puntos[indice_partida+i][0]]
+
+                            punto_inicial=puntos[indice_partida+i]
+                            
+                            aristas_horizontales_i.append(arista_h_aux)
+                    
+                    else:
+                        if (puntos[indice_partida+i+1][0] != punto_inicial[0]):
+                            horizontal=True
+                            
+                            arista_v_aux=[punto_inicial[0], punto_inicial[1], puntos[indice_partida+i][1]]
+        
+                            punto_inicial=puntos[indice_partida+i]
+                            aristas_verticales_i.append(arista_v_aux)
+
+                arista_v_aux=[punto_inicial[0], punto_inicial[1], puntos[len(puntos)-1][1]]
+                aristas_verticales_i.append(arista_v_aux)
+
+            punto_inicial=puntos[0]
+            horizontal=True
+        
+        condicion_salir=False
+        for x in range(len(puntos) - 1):
+            if (condicion_salir==False):
+                if (superior==True):
+                    if horizontal:
+                        if (puntos[x+1][1] != punto_inicial[1]):
+                            horizontal=False
+                            
+                            
+                            arista_h_aux=[punto_inicial[1], punto_inicial[0], puntos[x][0]]
+                            
+
+                            punto_inicial=puntos[x]
+                            
+                            aristas_horizontales_i.append(arista_h_aux)
+                    
+                    else:
+                        if (puntos[x+1][0] != punto_inicial[0]):
+                            horizontal=True
+                            
+                            
+                            arista_v_aux=[punto_inicial[0], punto_inicial[1], puntos[x][1]]
+                            
+                            punto_inicial=puntos[x]
+                            aristas_verticales_i.append(arista_v_aux)
+
+                if (x in vector_cambio and x!=0):
+                    if (superior==True): #Si estabamos con los arcos inferiores hay que meter el último punto 
+                        if horizontal:
+                            if (punto_inicial[0] != puntos[x][0]): #Para ver que no es el mismo punto 
+
+                                
+                                arista_h_aux=[punto_inicial[1], punto_inicial[0], puntos[x][0]]
+
+                                aristas_horizontales_i.append(arista_h_aux)
+                        else:
+                            if(punto_inicial[1] != puntos[x][1]):
+                                arista_v_aux=[punto_inicial[0], punto_inicial[1], puntos[x][1]]
+                                
+                                aristas_verticales_i.append(arista_v_aux)
+
+                        aristas_i.append(aristas_horizontales_i)
+                        aristas_i.append(aristas_verticales_i)
+                        aristas.append(aristas_i)
+
+                        aristas_i=[]
+                        aristas_horizontales_i=[]
+                        aristas_verticales_i=[]
+                        superior=False
+                    else:
+                        if (puntos[x+2][1] != puntos[x][1]):
+                            horizontal=False
+                        else:
+                            horizontal=True
+                        
+                        punto_inicial=puntos[x]
+                        superior=True
+
+                    if (x==valor_salir):
+                        condicion_salir=True
+        
+        if (condicion_salir==False):
+            if (superior==True):
+                
+                arista_v_aux=[-0.5, punto_inicial[1], 0]
+                
+
+                aristas_verticales_i.append(arista_v_aux)
+                aristas_i.append(aristas_horizontales_i)
+                aristas_i.append(aristas_verticales_i)
+                aristas.append(aristas_i)
+        
+        return aristas
+
+    def __coincidir_puntos_y_arista(self, coordenada_punto1, coordenada_punto2, arista):
+        '''
+        Esta función comprueba si una arista horizontal [vertical] almacenada en el parámetro 'arista' contiene un punto con coordenada 'x' ['y'] que esté contenido entre los valores coordenada_punto1 y coordenada_punto2.
+
+        Args:
+            coordenada_punto1: Coordenada 'x' ['y'] de valor menor de una arista horizontal [vertical] de un arco superior o inferior.
+            coordenada_punto2: Coordenada 'x' ['y'] de valor mayor de una arista horizontal [vertical] de un arco superior o inferior.
+            arista: Arista horizontal o vertical.
+        '''
+
         if (arista[1] < (coordenada_punto2) and arista[2] > (coordenada_punto1)):
             return True
         else: 
             return False
 
-    def arista_y_puntos_no_coinciden(self, x, punto_1, punto_2):
+    def __arista_y_puntos_no_coinciden(self, x, punto_1, punto_2):
+        '''
+        Comprueba si una arista vertical inferior (x), es consecutiva a la arista horizontal dada por los puntos punto_1 y punto_2. Para que sea consecutiva, 
+        uno de los puntos tiene que tener la misma coordenada 'x' que dicha arista vertical y la coordenada 'y' de uno de los dos puntos de la arista vertical inferior 
+        (x[1] o x[2]) debe coincidir con la coordenada 'y' de dicho punto.
+
+        Este método únicamente es utilizado por el método __calcular_bordes_centrales.
+
+        Args:
+            x: Arista vertical inferior en formato: [x, y_1, y_2] donde el primero de ellos será la coordenada 'x' de la arista vertical inferior, 
+        el segundo elemento será la coordenada 'y' del vértice de la arista con menor valor y el tercero será la coordenada 'y' del vértice de la arista 
+        con mayor valor.
+            punto_1: Primer punto de la arista horizontal que estamos analizando.
+            punto_2: Segundo punto de la arista horizontal que estamos analizando. 
+        '''
+
         no_coinciden=True
         if (x[0]==punto_1[0]):
             if (x[1]==punto_1[1] or x[2]==punto_1[1]):
@@ -522,39 +929,63 @@ class Nudo:
                 no_coinciden=False
         return no_coinciden
     
-    def obtener_borde_izquierdo(self, punto, aristas_verticales):
+    def __obtener_borde_izquierdo(self, punto, aristas_verticales):
+        '''
+        Devuelve el borde izquierdo (espacio por la izquierda) que se dejará entre el punto inicial puntos[0] y el camino u_1 o v_1
+
+        Este método únicamente es utilizado por el método __obtener_bordes_y_giros_vi_ui.
+
+        Args:
+            puntos: Lista obtenida de la función obtener_puntos_nudo_dowker (y modificada posterioremente por la función dividir_nudo_en_arcos)
+            aristas_verticales: Segundo elemento de la lista que devuelve la función obtener_aristas.
+        '''
+
         valor_mas_cercano=0.5
         for x in aristas_verticales:
             if ((x[0] < punto[0]) and ((punto[0]-x[0]) < valor_mas_cercano)):
-                if (coincidir_punto_y_arista (punto[1], x)):
+                if ((x[2]> (punto[1]-0.2)) and (x[1] < (punto[1]+0.2))):
                     valor_mas_cercano=(punto[0]-x[0])
-        print('Valor_mas_cercano ' + str(valor_mas_cercano))
+
         return (valor_mas_cercano*0.4)
 
-    def calcular_bordes_centrales (self, punto_inicial, puntos, i, aristas_horizontales, aristas_verticales_inferiores):
-        
+    def __calcular_bordes_centrales (self, punto_inicial, puntos, i, aristas_horizontales, aristas_verticales_inferiores_o_superiores):
+        '''
+        Dada una arista horizontal (determinada por los puntos "punto_inicial" y "puntos[i]") devuelve los espacios que se van a dejar por arriba y por abajo (borde_superior y borde inferior) entre 
+        dicha arista horizontal y el camino v_i o u_i correspondiente. 
+
+        Se devolverá el espacio mínimo entre el espacio superior y el inferior, por lo que el borde superior y el borde inferior serán el mismo en este caso. 
+
+        Este método únicamente es utilizado por el método __obtener_bordes_y_giros_vi_ui.
+
+        Args:
+            punto_inicial: Punto de origen de la arista horizontal de la cual queremos calcular los bordes centrales.
+            puntos: Lista obtenida de la función obtener_puntos_nudo_dowker (y modificada posterioremente por la función dividir_nudo_en_arcos).
+            i: índice de la lista de puntos, que indica la posición dentro de dicha lista del punto final de la arista.
+            aristas_horizontales: Lista de las aristas horizontales del nudo, siendo el primer elemento de la lista obtenida de la función obtener_aristas
+            aristas_verticales_inferiores: Lista de las aristas verticales inferiores o superiores del nudo en función de si estamos calculando los bordes y giros de un camino v_i o u_i, siendo el segundo elemento de la 
+        lista obtenida de la función __obtener_aristas_inferiores
+
+        '''
         
         valor_mas_cercano=0.5
-        for x in aristas_horizontales:
+        for x in aristas_horizontales:          #Se comprueba la distancia vertical con las otras aristas horizontales 
             if (punto_inicial[1]!= x[0] and abs(punto_inicial[1]-x[0])< valor_mas_cercano):
                 if (punto_inicial[0] < puntos[i][0]): #Esta condición es para pasarle a la siguiente función los valores ordenados de menor a mayor
-                    if (self.coincidir_puntos_y_arista(punto_inicial[0], puntos[i][0], x)):
+                    if (self.__coincidir_puntos_y_arista(punto_inicial[0], puntos[i][0], x)):
                         valor_mas_cercano=abs(punto_inicial[1]-x[0])
                 else:
-                    if (self.coincidir_puntos_y_arista(puntos[i][0], punto_inicial[0], x)):
+                    if (self.__coincidir_puntos_y_arista(puntos[i][0], punto_inicial[0], x)):
                         valor_mas_cercano=abs(punto_inicial[1]-x[0])
         
 
-        print ('calcular_bordes_centrales: punnto_inicial: ')
-        print (punto_inicial)
-        print (puntos[i])
-        for x in aristas_verticales_inferiores:
-            if self.arista_y_puntos_no_coinciden(x, punto_inicial, puntos[i]):  #Esta función sirve para no contemplar las aristas verticales que estén unidas a la arista horizontal que estamos analizando 
+        
+        for x in aristas_verticales_inferiores_o_superiores:             #Se comprueba la distancia vertical con el comienzo o fin de las aristas verticales inferiores ya que recordemos que los caminos v_i [u_i] no se pueden intersectar
+            if self.__arista_y_puntos_no_coinciden(x, punto_inicial, puntos[i]):  #Esta función sirve para no contemplar las aristas verticales que estén unidas a la arista horizontal que estamos analizando 
                 valorr=0.1
-                print ('First x[0]: '+ str(x[0]))
+                
                 if (punto_inicial[0] < puntos[i][0]):
                     if ((punto_inicial[0] - valorr) < x[0] and x[0] < (puntos[i][0] + valorr)):
-                        print ('x[0]: '+ str(x[0]))
+                        
                         if (abs(x[1] - punto_inicial[1]) < valor_mas_cercano):
                             valor_mas_cercano=abs(x[1] - punto_inicial[1])
                         if ( abs(x[2] - punto_inicial[1]) < valor_mas_cercano ):
@@ -562,7 +993,7 @@ class Nudo:
                 else:
                     
                     if (((puntos[i][0]-valorr) < x[0]) and x[0] <(punto_inicial[0] + valorr)):
-                        print ('x[0]: '+ str(x[0]))
+                        
                         if (abs(x[1] - punto_inicial[1]) < valor_mas_cercano):
                             valor_mas_cercano=abs(x[1] - punto_inicial[1])
                         if ( abs(x[2] - punto_inicial[1]) < valor_mas_cercano ):
@@ -570,20 +1001,36 @@ class Nudo:
                     
         return (valor_mas_cercano*0.4)
 
-    def calcular_bordes_laterales(self, punto_inicial, puntos, i, aristas_verticales, aristas_horizontales_inferiores):
+    def __calcular_bordes_laterales(self, punto_inicial, puntos, i, aristas_verticales, aristas_horizontales_inferiores_o_superiores):
         
-        
+        '''
+        Dada una arista vertical (determinada por los puntos "punto_inicial" y "puntos[i]") devuelve los espacios que se van a dejar por la izquierda y por la derecha (borde_izquierda y borde_derecha) entre 
+        dicha arista vertical y el correspondiente camino v_i o u_i correspondiente. 
+
+        Se devolverá el espacio mínimo entre el espacio izquierdo y el derecho, por lo que el borde izquierdo y el borde derecho serán el mismo en este caso. 
+
+        Este método únicamente es utilizado por el método __obtener_bordes_y_giros_vi_ui.
+
+        Args:
+            punto_inicial: Punto de origen de la arista vertical de la cual queremos calcular los bordes centrales.
+            puntos: Lista obtenida de la función obtener_puntos_nudo_dowker (y modificada posterioremente por la función dividir_nudo_en_arcos).
+            i: índice de la lista de puntos, que indica la posición dentro de dicha lista del punto final de la arista.
+            aristas_verticales: Lista de las aristas verticales del nudo, siendo el segundo elemento de la lista obtenida de la función obtener_aristas
+            aristas_horizontales_inferiores: Lista de las aristas horizontales inferiores o superiores del nudo en función de si estamos calculando los bordes y giros de un camino v_i o u_i, siendo el primer elemento de la lista obtenida de la función __obtener_aristas_inferiores
+
+        '''
+
         valor_mas_cercano=0.5
-        for x in aristas_verticales:
+        for x in aristas_verticales:                #Se comprueba la distancia horizontal con otras aristas verticales 
             if ((punto_inicial[0]!= x[0]) and abs(punto_inicial[0]- x[0])< valor_mas_cercano):
                 if (punto_inicial[1] < puntos[i][1]): #Esta condición es para pasarle a la siguiente función los valores ordenados de menor a mayor
-                    if (self.coincidir_puntos_y_arista(punto_inicial[1], puntos[i][1], x)):
+                    if (self.__coincidir_puntos_y_arista(punto_inicial[1], puntos[i][1], x)):
                         valor_mas_cercano=abs(punto_inicial[0]- x[0])
                 else:
-                    if (self.coincidir_puntos_y_arista(puntos[i][1], punto_inicial[1],  x)):
+                    if (self.__coincidir_puntos_y_arista(puntos[i][1], punto_inicial[1],  x)):
                         valor_mas_cercano=abs(punto_inicial[0]- x[0])
         
-        for x in aristas_horizontales_inferiores:
+        for x in aristas_horizontales_inferiores_o_superiores:       #Se comprueba la distancia horizontal con el comienzo o fin de las aristas horizontales inferiores ya que recordemos que los caminos v_i [u_i] no se pueden intersectar
             if (punto_inicial[1] < puntos[i][1]):
                 if (punto_inicial[1] < x[0] and x[0] < puntos[i][1]):
                     if (abs(x[1]- punto_inicial[0]) < valor_mas_cercano):
@@ -599,7 +1046,18 @@ class Nudo:
 
         return (valor_mas_cercano*0.4)
 
-    def limite_aristas_horizontales_borde_arriba(self, punto, aristas_horizontales):
+    def __limite_aristas_horizontales_borde_superior(self, punto, aristas_horizontales):
+        '''
+        Función que, dado el punto inicial de un arco superior o inferior y ser la primera arista de dicho arco una arista vertical que avanza de arriba a abajo, devuelve el borde superior.
+        Igual pasaría si fuera el último punto de un arco superior o inferior y ser la ultima arista de dicho arco una arista vertical que avanza de abajo a arriba, devuelve el borde superior.
+
+        Este método únicamente es utilizado por el método __obtener_bordes_y_giros_vi_ui.
+
+        Args:
+            punto: Punto del que queremos calcular el borde_superior.
+            aristas_horizontales: Primer elemento de la lista que devuelve la función obtener_aristas. 
+        '''
+
         limite=0.5
         for x in aristas_horizontales:
             if (x[0] > punto[1] and (x[0]- punto[1])< limite):
@@ -607,7 +1065,18 @@ class Nudo:
                     limite=(x[0]- punto[1])
         return (limite*0.4)
     
-    def limite_aristas_horizontales_borde_abajo(self,punto, aristas_horizontales):
+    def __limite_aristas_horizontales_borde_inferior(self,punto, aristas_horizontales):
+        '''
+        Función que, dado el punto inicial de un arco superior o inferior y ser la primera arista de dicho arco una arista vertical que avanza de abajo a arriba, devuelve el borde inferior.
+        Igual pasaría si fuera el último punto de un arco superior o inferior y ser la ultima arista de dicho arco una arista vertical que avanza de arriba a abajo, devuelve el borde inferior.
+
+        Este método únicamente es utilizado por el método __obtener_bordes_y_giros_vi_ui.
+
+        Args:
+            punto: Punto del que queremos calcular el borde inferior.
+            aristas_horizontales: Primer elemento de la lista que devuelve la función obtener_aristas. 
+        '''
+
         limite=0.5
         for x in aristas_horizontales:
             if (x[0] < punto[1] and (punto[1]- x[0] < limite)):
@@ -615,7 +1084,18 @@ class Nudo:
                     limite=(punto[1]-x[0])
         return (limite*0.4)
 
-    def limite_aristas_verticales_borde_derecha(self, punto, aristas_verticales):
+    def __limite_aristas_verticales_borde_derecha(self, punto, aristas_verticales):
+        '''
+        Función que, dado el punto inicial de un arco superior o inferior y ser la primera arista de dicho arco una arista horizontal que avanza de derecha a izquierda, devuelve el borde derecho.
+        Igual pasaría si fuera el último punto de un arco superior o inferior y ser la ultima arista de dicho arco una arista horizontal que avanza de izquierda a derecha, devuelve el borde derecho.
+
+        Este método únicamente es utilizado por el método __obtener_bordes_y_giros_vi_ui.
+
+        Args:
+            punto: Punto del que queremos calcular el borde derecho.
+            aristas_verticales: Segundo elemento de la lista que devuelve la función obtener_aristas. 
+        '''
+        
         limite=0.5
         for x in aristas_verticales:
             if (x[0] > punto[0] and (x[0] - punto[0])<limite):
@@ -624,17 +1104,50 @@ class Nudo:
         
         return (limite*0.4)
     
-    def limite_aristas_verticales_borde_izquierda(self, punto, aristas_verticales):
+    def __limite_aristas_verticales_borde_izquierda(self, punto, aristas_verticales):
+        '''
+        Función que, dado el punto inicial de un arco superior o inferior y ser la primera arista de dicho arco una arista horizontal que avanza de izquierda a derecha, devuelve el borde izquierdo.
+        Igual pasaría si fuera el último punto de un arco superior o inferior y ser la última arista de dicho arco una arista horizontal que avanza de derecha a izquierda, devuelve el borde izquierdo.
+
+        Este método únicamente es utilizado por el método __obtener_bordes_y_giros_vi_ui.
+
+        Args:
+            punto: Punto del que queremos calcular el borde izquierdo.
+            aristas_verticales: Segundo elemento de la lista que devuelve la función obtener_aristas. 
+        '''
+        
         limite=0.5
         for x in aristas_verticales:
             if(x[0] < punto[0] and (punto[0]- x[0])< limite):
-                if ((x[1] - 0.1) < punto[1] and (x[2] + 0.1) < punto[1]):
+                if ((x[1] - 0.1) < punto[1] and  punto[1]<(x[2] + 0.1) ):
                     limite=(punto[0] - x[0])
         
         return (limite*0.4)
     
-    def obtener_v_i(self, puntos, aristas_horizontales, aristas_verticales, valor_inicial, valor_final, aristas_inferiores):
+    def __obtener_bordes_y_giros_vi_ui(self, puntos, aristas, valor_inicial, valor_final, aristas_inferiores_o_superiores):
+        '''
+        Método que, dados los índices de la lista 'puntos', valor_inicial y valor final, que denotan el punto inicial (puntos[valor_inicial]) y el punto_final (puntos[valor_final]) de un arco inferior o superior, 
+        calcula los bordes que tendrá que tener el camino v_i (asociado a un arco inferior) o el camino u_i (asociado a un arco superior), con respecto a dicho arco superior en todas las aristas de dicho arco superior o inferior. 
+        Si dicho arco superior o inferior tiene n aristas, la lista de bordes tendrá n elementos, siendo cada uno de ellos una lista del tipo [borde_izquierda, borde_derecha, borde_superior, borde_inferior].
         
+        También se calculará una lista de giros que indicará los giros que se realizan para pasar de una arista de dicho arco a la siguiente. Por ejemplo si estamos en una arista horizontal yendo de izquierda a derecha, solo tendremos las 
+        opciones :
+            "ab_d", que significa 'abajo derecha' que indicará que la siguiente arista será una arista vertical que irá desde arriba hacia abajo, 
+            "ar_d": que significa 'arriba derecha' que indicará que la siguiente arista será una arista vertical que irá desde abajo hacia arriba.
+        Si en la arista horizontal fuéramos de izquierda a derecha las opciones serían "ab_i" y "ar_i".
+        Si un determinado arco tiene n aristas, tendremos en la lista de giros n-1 elementos.
+
+        Se devuelve una lista de dos elementos, siendo el primero de ellos la lista de bordes, y el segundo de ellos la lista de giros. 
+
+        Args:
+            puntos: Lista obtenida de la función obtener_puntos_nudo_dowker (y modificada posterioremente por la función dividir_nudo_en_arcos).
+            aristas: Lista de aristas obtenida de la función calcular_aristas. Se utilizan para calcular los bordes que tendrán los caminos v_i y u_i con respcto al correspondiente arco inferior y superior respectivamente.
+            valor_inicial: Índice de la lista puntos del punto inicial del arco superior o inferior que estamos analizando. 
+            valor_final: Índice de la lista puntos del punto final del arco superior o inferior que estamos analizando.
+            aristas_inferiores_o_superiores: Lista de aristas obtenida de la función __obtener_aristas_inferiores u __obtener_aristas_superiores en función de si estamos calculando los bordes y giros de un camino v_i o u_i, que servirá para calcular los bordes
+        que tendrán los caminos v_i y u_i con respcto al correspondiente arco inferior y superior respectivamente.
+        '''
+
         borde_arriba=0
         borde_abajo=0
         borde_izquierda=0
@@ -642,7 +1155,7 @@ class Nudo:
 
         bordes=[]
         if (valor_inicial==0):
-            borde_izquierda=self.obtener_borde_izquierdo(puntos[0], aristas_verticales)
+            borde_izquierda=self.__obtener_borde_izquierdo(puntos[0], aristas[1])
             horizontal=True
         
         else:   #En otro caso tenemos que ver si partimos de una zona horizontal o vertical 
@@ -650,17 +1163,17 @@ class Nudo:
             if (punto_anterior[0] != puntos[valor_inicial][0]):
                 horizontal=True
                 if  (punto_anterior[0] > puntos[valor_inicial][0]):  #Vamos hacia la izquierda, por lo tanto calculamos el borde derecho
-                    #borde_derecha=puntos[valor_inicial][0]
-                    limite=self.limite_aristas_verticales_borde_derecha(puntos[valor_inicial], aristas_inferiores[1])
+            
+                    limite=self.__limite_aristas_verticales_borde_derecha(puntos[valor_inicial], aristas_inferiores_o_superiores[1])
 
                     if ((punto_anterior[0] - puntos[valor_inicial][0])/2 < limite):
                         limite=(punto_anterior[0] - puntos[valor_inicial][0])/2
                     
                     borde_derecha=limite
                 
-                else:                                                #Vamos hacia la izquierda, por lo tanto calculamos el borde derecho
-                    #borde_izquierda=puntos[valor_inicial][0]
-                    limite=self.limite_aristas_verticales_borde_izquierda(puntos[valor_inicial], aristas_inferiores[1])
+                else:                                                #Vamos hacia la derecha, por lo tanto calculamos el borde izquierdo
+                    
+                    limite=self.__limite_aristas_verticales_borde_izquierda(puntos[valor_inicial], aristas_inferiores_o_superiores[1])
 
                     if (( puntos[valor_inicial][0] - punto_anterior[0])/2 < limite):
                         limite=(puntos[valor_inicial][0] - punto_anterior[0])/2
@@ -670,17 +1183,17 @@ class Nudo:
             else:
                 horizontal=False
                 if (punto_anterior[1] > puntos[valor_inicial][1]):      #Vamos hacia abajo por lo que hay que calcular el borde superior
-                    #borde_arriba=puntos[valor_inicial][1]
-                    limite=self.limite_aristas_horizontales_borde_arriba(puntos[valor_inicial], aristas_inferiores[0])
+                    
+                    limite=self.__limite_aristas_horizontales_borde_superior(puntos[valor_inicial], aristas_inferiores_o_superiores[0])
 
                     if ((punto_anterior[1] - puntos[valor_inicial][1])/2 < limite):
                         limite=(punto_anterior[1] - puntos[valor_inicial][1])/2
                     
                     borde_arriba=limite
                 
-                else:
-                    #borde_abajo=puntos[valor_inicial][1]
-                    limite= self.limite_aristas_horizontales_borde_abajo(puntos[valor_inicial], aristas_inferiores[0])
+                else:                                                   #Vamos hacia arriba por lo que hay que calcular el borde inferior 
+                    
+                    limite= self.__limite_aristas_horizontales_borde_inferior(puntos[valor_inicial], aristas_inferiores_o_superiores[0])
 
                     if (( puntos[valor_inicial][1] - punto_anterior[1])/2 < limite):
                         limite=(puntos[valor_inicial][1] - punto_anterior[1])/2
@@ -688,9 +1201,8 @@ class Nudo:
                     borde_abajo=limite
     
         punto_inicial=puntos[valor_inicial]
-        contador=0 #Este contador servirá para el contador de bordes 
+        contador=0          #Este contador servirá para el contador de bordes 
         giros=[]
-        print('borde_izda: ' +str(borde_izquierda))
         for i in range(valor_final - valor_inicial):
             if horizontal:
                 if (punto_inicial[1] != puntos[valor_inicial + i +1][1]):
@@ -700,7 +1212,7 @@ class Nudo:
                         else:
                             borde_derecha=bordes[len(bordes)-1][1]
                     
-                    bordes_centrales=self.calcular_bordes_centrales(punto_inicial, puntos, valor_inicial+i, aristas_horizontales, aristas_inferiores[1])
+                    bordes_centrales=self.__calcular_bordes_centrales(punto_inicial, puntos, valor_inicial+i, aristas[0], aristas_inferiores_o_superiores[1])
                     bordes_aux=[borde_izquierda, borde_derecha, bordes_centrales, bordes_centrales]
                     if (contador!=0):
                         if ( (giros[len(giros)-1]== "ab_i") or (giros[len(giros)-1]== "ab_d") ):    #Si el giro es en el lado izquierdo, en la lista de bordes anterior teníamos el borde de la izda a 0 por lo que lo modificamos
@@ -711,19 +1223,16 @@ class Nudo:
                     bordes.append(bordes_aux)
                     if (punto_inicial[1] > puntos[valor_inicial + i +1][1]):
                         if (borde_derecha==0):
-                            giros.append("ab_d") #abajo derecha
+                            giros.append("ab_d") #Abajo derecha
                         else:
-                            giros.append("ab_i")
+                            giros.append("ab_i") #Abajo izquierda
                     else:
                         if (borde_derecha==0):
-                            giros.append("ar_d") #abajo derecha
+                            giros.append("ar_d") #Arriba derecha
                         else:
-                            giros.append("ar_i")
+                            giros.append("ar_i") #Arriba izquierda
+
                     punto_inicial=puntos[valor_inicial+i]
-                    print('Horizontal, contador= '+ str(contador)+ ' i= '+ str(i)+ ' bordes= ')
-                    print(bordes)
-                    print('giros: ')
-                    print(giros)
                     borde_izquierda=0
                     borde_derecha=0
                     borde_arriba=0
@@ -738,7 +1247,7 @@ class Nudo:
                         else:                                       #Si el giro es hacia arriba
                             borde_abajo=bordes[len(bordes)-1][3]    #El borde de abajo del nuevo será el borde de abajo del anterior
 
-                    bordes_laterales=self.calcular_bordes_laterales(punto_inicial, puntos, valor_inicial+i, aristas_verticales, aristas_inferiores[0])
+                    bordes_laterales=self.__calcular_bordes_laterales(punto_inicial, puntos, valor_inicial+i, aristas[1], aristas_inferiores_o_superiores[0])
                     bordes_aux=[bordes_laterales, bordes_laterales, borde_arriba, borde_abajo]
                     #Ahora modificamos el valor que estaba a 0 en la lista de bordes anterior
                     if (contador!=0):
@@ -750,7 +1259,7 @@ class Nudo:
                     bordes.append(bordes_aux)
 
                     if (punto_inicial[0] > puntos[valor_inicial + i +1][0] ): #Esto quiere decir que giramos para la izquierda
-                        if (borde_arriba==0): #Esto quiere decir que estamos yendo hacia abajo 
+                        if (borde_arriba==0): #Esto quiere decir que estamos yendo hacia arriba
                             giros.append("ar_i")
                         else:
                             giros.append("ab_i")
@@ -761,20 +1270,13 @@ class Nudo:
                             giros.append("ab_d")
 
                     punto_inicial=puntos[valor_inicial+i]
-                    print('Vertical, contador= '+ str(contador)+ ' i= '+ str(i)+ ' bordes= ')
-                    print(bordes)
-                    print('giros: ')
-                    print(giros)
                     borde_izquierda=0
                     borde_derecha=0
                     borde_arriba=0
                     borde_abajo=0
                     contador+=1
                     horizontal=True
-        
-        print(puntos)
-        print('valor_final: '+ str(valor_final))
-        print('len(puntos): '+ str(len(puntos)))
+
         if (valor_final!= (len(puntos)-1)):
             punto_siguiente=puntos[valor_final+2]
         else:
@@ -793,7 +1295,7 @@ class Nudo:
 
             if  (punto_siguiente[0] > puntos[valor_final][0]):  #Vamos hacia la derecha, por lo tanto calculamos el borde derecho porque el izquierdo ya lo teníamos calculado  y el borde derecho de la siguiente forma 
                 #borde_derecha=puntos[valor_final][0]
-                limite=self.limite_aristas_verticales_borde_derecha(puntos[valor_final], aristas_inferiores[1])
+                limite=self.__limite_aristas_verticales_borde_derecha(puntos[valor_final], aristas_inferiores_o_superiores[1])
 
                 if ((punto_siguiente[0] - puntos[valor_final][0])/2 < limite):
                     limite=(punto_siguiente[0] - puntos[valor_final][0])/2
@@ -804,14 +1306,14 @@ class Nudo:
             
             else:                                                #Vamos hacia la izquierda, por lo tanto calculamos el borde derecho
                 #borde_izquierda=puntos[valor_final][0]
-                limite=self.limite_aristas_verticales_borde_izquierda(puntos[valor_final], aristas_inferiores[1])
+                limite=self.__limite_aristas_verticales_borde_izquierda(puntos[valor_final], aristas_inferiores_o_superiores[1])
 
                 if (( puntos[valor_final][0] - punto_siguiente[0])/2 < limite):
                     limite=(puntos[valor_final][0] - punto_siguiente[0])/2
                 
                 borde_izquierda=limite
 
-            bordes_centrales=self.calcular_bordes_centrales(punto_inicial, puntos, valor_final, aristas_horizontales, aristas_inferiores[1])
+            bordes_centrales=self.__calcular_bordes_centrales(punto_inicial, puntos, valor_final, aristas[0], aristas_inferiores_o_superiores[1])
             bordes_aux=[borde_izquierda, borde_derecha, bordes_centrales, bordes_centrales]
             if (contador!=0):
                 if ( (giros[len(giros)-1]== "ab_i") or (giros[len(giros)-1]== "ab_d") ):    #Si el giro es en el lado izquierdo, en la lista de bordes anterior teníamos el borde de la izda a 0 por lo que lo modificamos
@@ -829,8 +1331,8 @@ class Nudo:
                     borde_abajo=bordes[len(bordes)-1][3] 
 
             if (punto_siguiente[1] > puntos[valor_final][1]):      #Vamos hacia abajo por lo que hay que calcular el borde superior
-                #borde_arriba=puntos[valor_final][1]
-                limite=self.limite_aristas_horizontales_borde_arriba(puntos[valor_final], aristas_inferiores[0])
+                
+                limite=self.__limite_aristas_horizontales_borde_superior(puntos[valor_final], aristas_inferiores_o_superiores[0])
 
                 if ((punto_siguiente[1] - puntos[valor_final][1])/2 < limite):
                     limite=(punto_siguiente[1] - puntos[valor_final][1])/2
@@ -838,15 +1340,15 @@ class Nudo:
                 borde_arriba=limite
             
             else:
-                #borde_abajo=puntos[valor_final][1]
-                limite= self.limite_aristas_horizontales_borde_abajo(puntos[valor_final], aristas_inferiores[0])
+                
+                limite= self.__limite_aristas_horizontales_borde_inferior(puntos[valor_final], aristas_inferiores_o_superiores[0])
                 
                 if (( puntos[valor_final][1] - punto_siguiente[1])/2 < limite):
                     limite=((puntos[valor_final][1] - punto_siguiente[1])/2)
                 
                 borde_abajo=limite
 
-            bordes_laterales=self.calcular_bordes_laterales(punto_inicial, puntos, valor_inicial+i, aristas_verticales, aristas_inferiores[0])
+            bordes_laterales=self.__calcular_bordes_laterales(punto_inicial, puntos, valor_inicial+i, aristas[1], aristas_inferiores_o_superiores[0])
             bordes_aux=[bordes_laterales, bordes_laterales, borde_arriba, borde_abajo]
             if (contador!=0):
                 if ( (giros[len(giros)-1]== "ab_i") or (giros[len(giros)-1]== "ar_i") ):    #Si el giro es en el lado izquierdo, en la lista de bordes anterior teníamos el borde de la izda a 0 por lo que lo modificamos
@@ -855,15 +1357,25 @@ class Nudo:
                     bordes[len(bordes)-1][1]=bordes_laterales
             bordes.append(bordes_aux)
 
-        print('Ultimo de la tanda: contador= '+ str(contador)+ ' i= '+ str(i)+ ' bordes= ')
-        print(bordes)
-        print('giros: ')
-        print(giros)
         bordes_y_giros=[bordes, giros]
-        return bordes_y_giros
-        
+        return bordes_y_giros    
 
-    def obtener_puntos_v_i(self, bordes_y_giros, puntos, valor_inicial, valor_final):
+    def __obtener_puntos_vi_ui(self, bordes_y_giros, puntos, valor_inicial, valor_final):
+        '''
+        Función que calcula para cada arco superior o inferior, determinado por los puntos comprendidos entre puntos[valor_inicial] y puntos[valor_final], los caminos v_i y u_i que rodean a dichos arcos inferiores y superiores respectivamente.
+        Para ello se requiere de los bordes y los giros calculados mediante la función __obtener_bordes_y_giros. 
+
+        Esta función devuelve una secuencia de puntos que serán los vértices de las aristas del camino poligonal v_i o u_i.
+
+        Args:
+            bordes_y_giros: Lista de dos elementos, siendo el primero de ellos los bordes y el segundo los giros, obtenida de la función __obtener_bordes_y_giros.
+            puntos: Lista obtenida de la función obtener_puntos_nudo_dowker (y modificada posterioremente por la función dividir_nudo_en_arcos).
+            valor_inicial: Índice de la lista puntos del punto inicial del arco superior o inferior que estamos analizando. 
+            valor_final: Índice de la lista puntos del punto final del arco superior o inferior que estamos analizando.
+
+        '''
+
+        
         if (valor_inicial==0):
             horizontal=True
         
@@ -877,9 +1389,8 @@ class Nudo:
         bordes=bordes_y_giros[0]
         giros=bordes_y_giros[1]
         puntos_vi=[]
-        if not giros:
+        if not giros:       #Esto ocurre en el caso que el arco superior o inferior, este comprendido únicamente por una aristas vertical u horizontal.
 
-            print('Comprobacion: '+ str (bordes[0][0]))
             if (puntos[valor_inicial][0] < puntos[valor_final][0]):
                 punto_mayor=puntos[valor_final]
                 punto_menor=puntos[valor_inicial]
@@ -899,15 +1410,11 @@ class Nudo:
             contador=0
             punto_inicial=puntos[valor_inicial]
             
-            for i in range(valor_final - valor_inicial ):
-                if (contador==0):
-                    if horizontal:
-                        if (punto_inicial[1] != puntos[valor_inicial + i +1][1]):
+            for i in range(valor_final - valor_inicial):
+                if (contador==0):       #Caso en el que estemos calculando los puntos de la primera arista del arco superior o inferior
+                    if horizontal:              #Si la arista que etsamos recorriendo es horizontal
+                        if (punto_inicial[1] != puntos[valor_inicial + i +1][1]):           #Si llegamos al vértice de dicha arista horizontal con una vertical 
                             punto_final=puntos[valor_inicial+i]
-                            
-                            print ('IGUALDAD 0: ')
-                            print(punto_inicial)
-                            print(punto_final)
 
                             if ( giros[contador]=="ar_d" or giros[contador]=="ab_d"):
                                 if (giros[contador]=="ar_d"):
@@ -939,8 +1446,8 @@ class Nudo:
                             horizontal=False
                             contador+=1
                             punto_inicial=puntos[valor_inicial+i]
-                    else:
-                        if (punto_inicial[0] != puntos[valor_inicial + i +1][0]):
+                    else:                       #Si la arista que estamos recorriendo es vertical 
+                        if (punto_inicial[0] != puntos[valor_inicial + i +1][0]):       #Si llegamos al vértice de dicha arista vertical con una horizontal
                             punto_final=puntos[valor_inicial+i]
                             
                             if (giros[contador]=="ab_d" or giros[contador]=="ab_i"):
@@ -975,13 +1482,10 @@ class Nudo:
                             horizontal=True
                             punto_inicial=puntos[valor_inicial+i]
                                 
-                else:
+                else:                   #Caso en el que no estemos calculando los puntos asociados a la primera arista del arco superior o inferior
                     if horizontal:
                         if (punto_inicial[1] != puntos[valor_inicial + i +1][1]):
                             punto_final=puntos[valor_inicial+i]
-                            print ('IGUALDAD ' + str(contador)+ ': ')
-                            print(punto_inicial)
-                            print(punto_final)
                             if ( giros[contador]=="ar_d" or giros[contador]=="ab_d"):
                                 if (giros[contador]=="ar_d"):
                                     signo=1
@@ -1024,9 +1528,6 @@ class Nudo:
                     else:
                         if (punto_inicial[0] != puntos[valor_inicial + i +1][0]):
                             punto_final=puntos[valor_inicial+i]
-                            print ('IGUALDAD ' + str(contador)+ ': ')
-                            print(punto_inicial)
-                            print(punto_final)
                             if ( giros[contador]=="ar_d" or giros[contador]=="ar_i"):
                                 if (giros[contador]=="ar_d"):
                                     signo=1
@@ -1067,10 +1568,11 @@ class Nudo:
                             horizontal=True
                             punto_inicial=puntos[valor_inicial+i]
             
+            #Aquí vamos a analizar el caso en el que estemos hallando los puntos de la última arista 
             punto_final=puntos[valor_final]
             if horizontal:
                 
-                if (puntos[valor_final-1][0] > punto_final[0]): #Si estamos yendo para la izquierda
+                if (puntos[valor_final-1][0] > punto_final[0]): #Si estamos yendo para la izquierda (de derecha a izquierda)
                     punto_aux=[punto_final[0] - bordes[contador][0], punto_final[1]+ bordes[contador][2]]
 
                     if (punto_aux[1]==puntos_vi[0][1]):
@@ -1085,7 +1587,7 @@ class Nudo:
                     else:
                         puntos_vi.append(punto_aux)
 
-                else:
+                else:                                           #Si estamos yendo para la derecha (de izquierda a derecha) 
                     
                     punto_aux=[punto_final[0] + bordes[contador][1], punto_final[1]+ bordes[contador][2]]
 
@@ -1102,7 +1604,7 @@ class Nudo:
 
             else:
                 
-                if (puntos[valor_final-1][1] > punto_final[1]): #Estamos yendo para abajo 
+                if (puntos[valor_final-1][1] > punto_final[1]): #Si estamos yendo para abajo (de arriba a abajo)
                     punto_aux=[punto_final[0]- bordes[contador][0], punto_final[1] - bordes[contador][3]]
                     if (punto_aux[0]==puntos_vi[0][0]):
                         puntos_vi.insert(0, punto_aux)
@@ -1114,7 +1616,7 @@ class Nudo:
                     else:
                         puntos_vi.append(punto_aux)
                 
-                else:       #Estamos yendo para arriba
+                else:       #Si estamos yendo hacia arriba (de abajo a arriba)
                     punto_aux=[punto_final[0] - bordes[contador][0], punto_final[1]+ bordes[contador][2]]
                     if (punto_aux[0]==puntos_vi[0][0]):
                         puntos_vi.insert(0, punto_aux)
@@ -1129,13 +1631,23 @@ class Nudo:
 
         return puntos_vi               
 
+    def obtener_caminos_vi (self, puntos, aristas, vector_cambio):
+        '''
+        Dados los puntos del nudo, y el vector de índices de la lista de puntos en los cuales se produce el cambio de un arco superior a uno inferior o viceversa, tras obtener los bordes y giros de cada camino v_i, llamamos a la función __obtener_puntos_vi_ui 
+        para obtener los puntos de cada camino v_i y almacenamos dichos puntos en una lista.
 
-    def obtener_caminos_v_i (self, puntos, aristas_horizontales, aristas_verticales, vector_cambio):
-        
-        aristas_inferiores=self.obtener_aristas_inferiores(puntos, vector_cambio)
+        Dicha lista, será una lista con tantos elementos como arcos inferiores tenga el nudo donde en la posición j se almacenarán los puntos del camino v_j.
+
+        Args:
+            puntos: Lista obtenida de la función obtener_puntos_nudo_dowker (y modificada posterioremente por la función dividir_nudo_en_arcos).
+            aristas: Lista de aristas obtenida de la función calcular_aristas. Se utilizan para calcular los bordes que tendrán los caminos v_i y u_i con respcto al correspondiente arco inferior y superior respectivamente.
+            vector_cambio: Lista de índices obtenida de la función dividir_nudo_en_arcos.
+        '''
+
+        aristas_inferiores=self.__obtener_aristas_inferiores(puntos, vector_cambio)
         contador=0
         puntos_vi=[]
-        if 0 not in vector_cambio: #Si el 0 no pertenece al vector que nos indica cuando hay que cambiar de arcos superiores a inferiores, nos creamos una lista auxiliar para que nos sea más fácil su manejo 
+        if 0 not in vector_cambio: #Si el 0 no pertenece al vector que nos indica cuando hay que cambiar de arcos superiores a inferiores, nos creamos una lista auxiliar para que nos sea más fácil su manejo.
             lista_puntos_auxiliares=[]
             indice_partida=vector_cambio[len(vector_cambio)-1]
             for i in range(len(puntos) - indice_partida+1):
@@ -1144,45 +1656,46 @@ class Nudo:
             for i in range(vector_cambio[0]+3):    #Le añado dos puntos más (por ello pongo +3) para poder comparar el punto final con el punto siguiente al final 
                 lista_puntos_auxiliares.append(puntos[i])
             
-            print('lista_puntos_auxiliares: ')
-            print(lista_puntos_auxiliares)
-            if (self.numeros[0]>0):         #Es decir el caso en el que el arco que pase por encima del primer cruce sea un cruce inferior
+            if (self.__numeros[0]>0):         #Es decir el caso en el que el arco que pase por encima del primer cruce sea un cruce inferior
                 
-                bordes_y_giros=self.obtener_v_i(lista_puntos_auxiliares, aristas_horizontales, aristas_verticales, 1, len(lista_puntos_auxiliares)-3, aristas_inferiores)
-                puntos_vi_aux=self.obtener_puntos_v_i(bordes_y_giros, lista_puntos_auxiliares, 1,len(lista_puntos_auxiliares)-3)
+                bordes_y_giros=self.__obtener_bordes_y_giros_vi_ui(lista_puntos_auxiliares, aristas, 1, len(lista_puntos_auxiliares)-3, aristas_inferiores)
+                puntos_vi_aux=self.__obtener_puntos_vi_ui(bordes_y_giros, lista_puntos_auxiliares, 1,len(lista_puntos_auxiliares)-3)
                 puntos_vi.append(puntos_vi_aux)
-                print ('Puntos_vi['+str(contador)+']')
-                print(puntos_vi[contador])
-                superior=True
                 modulo2=1
                 contador+=1
             else:
-                superior=False
                 modulo2=0
 
         else:
-            if (self.numeros[0]>0):
-                superior=False
+            if (self.__numeros[0]>0):
                 modulo2=0
             else:
-                superior=True
                 modulo2=1
 
         
         for i in range(len(vector_cambio)-1):
             if (i%2==modulo2):
-                print('obtener_caminos_v_'+ str(contador))
-                bordes_y_giros=self.obtener_v_i(puntos, aristas_horizontales, aristas_verticales, vector_cambio[i], vector_cambio[i+1], aristas_inferiores)
-                puntos_vi_aux=self.obtener_puntos_v_i(bordes_y_giros, puntos, vector_cambio[i], vector_cambio[i+1])
+                bordes_y_giros=self.__obtener_bordes_y_giros_vi_ui(puntos, aristas, vector_cambio[i], vector_cambio[i+1], aristas_inferiores)
+                puntos_vi_aux=self.__obtener_puntos_vi_ui(bordes_y_giros, puntos, vector_cambio[i], vector_cambio[i+1])
                 puntos_vi.append(puntos_vi_aux)
-                print ('Puntos_vi['+str(contador)+']')
-                print(puntos_vi[contador])
                 contador+=1
 
         return puntos_vi
 
-    def obtener_caminos_u_i (self, puntos, aristas_horizontales, aristas_verticales, vector_cambio):
-        aristas_superiores=self.obtener_aristas_superiores(puntos, vector_cambio)
+    def obtener_caminos_ui (self, puntos, aristas, vector_cambio):
+        '''
+        Dados los puntos del nudo, y el vector de índices de la lista de puntos en los cuales se produce el cambio de un arco superior a uno inferior o viceversa, tras obtener los bordes y giros de cada camino u_i, llamamos a la función __obtener_puntos_vi_ui 
+        para obtener los puntos de cada camino u_i y almacenamos dichos puntos en una lista.
+
+        Dicha lista, será una lista con tantos elementos como arcos superiores tenga el nudo donde en la posición j se almacenarán los puntos del camino u_j.
+
+        Args:
+            puntos: Lista obtenida de la función obtener_puntos_nudo_dowker (y modificada posterioremente por la función dividir_nudo_en_arcos).
+            aristas: Lista de aristas obtenida de la función calcular_aristas. Se utilizan para calcular los bordes que tendrán los caminos v_i y u_i con respcto al correspondiente arco inferior y superior respectivamente.
+            vector_cambio: Lista de índices obtenida de la función dividir_nudo_en_arcos.
+        '''
+
+        aristas_superiores=self.__obtener_aristas_superiores(puntos, vector_cambio)
         contador=0
         puntos_ui=[]
         if 0 not in vector_cambio:
@@ -1194,9 +1707,9 @@ class Nudo:
             for i in range(vector_cambio[0]+3):    #Le añado dos puntos más (por ello pongo +3) para poder comparar el punto final con el punto siguiente al final 
                 lista_puntos_auxiliares.append(puntos[i])
             
-            if (self.numeros[0] < 0): #Es decir el caso en el que el arco que pase por encima del primer cruce sea un cruce superior
-                bordes_y_giros=self.obtener_v_i(lista_puntos_auxiliares, aristas_horizontales, aristas_verticales, 1, len(lista_puntos_auxiliares)-3, aristas_superiores)
-                puntos_ui_aux=self.obtener_puntos_v_i(bordes_y_giros, lista_puntos_auxiliares, 1,len(lista_puntos_auxiliares)-3)
+            if (self.__numeros[0] < 0): #Es decir el caso en el que el arco que pase por encima del primer cruce sea un cruce superior
+                bordes_y_giros=self.__obtener_bordes_y_giros_vi_ui(lista_puntos_auxiliares, aristas, 1, len(lista_puntos_auxiliares)-3, aristas_superiores)
+                puntos_ui_aux=self.__obtener_puntos_vi_ui(bordes_y_giros, lista_puntos_auxiliares, 1,len(lista_puntos_auxiliares)-3)
                 puntos_ui.append(puntos_ui_aux)
                 superior=False
                 modulo2=1
@@ -1206,7 +1719,7 @@ class Nudo:
                 modulo2=0
         
         else:
-            if (self.numeros[0] < 0):
+            if (self.__numeros[0] < 0):
                 superior=True
                 modulo2=0
             else:
@@ -1216,17 +1729,29 @@ class Nudo:
         
         for i in range(len(vector_cambio)-1):
             if (i%2==modulo2):
-                print('obtener_caminos_u_'+ str(contador))
-                bordes_y_giros=self.obtener_v_i(puntos, aristas_horizontales, aristas_verticales, vector_cambio[i], vector_cambio[i+1], aristas_superiores)
-                puntos_ui_aux=self.obtener_puntos_v_i(bordes_y_giros, puntos, vector_cambio[i], vector_cambio[i+1])
+                
+                bordes_y_giros=self.__obtener_bordes_y_giros_vi_ui(puntos, aristas, vector_cambio[i], vector_cambio[i+1], aristas_superiores)
+                puntos_ui_aux=self.__obtener_puntos_vi_ui(bordes_y_giros, puntos, vector_cambio[i], vector_cambio[i+1])
                 puntos_ui.append(puntos_ui_aux)
-                print ('Puntos_ui['+str(contador)+']')
-                print(puntos_ui[contador])
                 contador+=1
 
         return puntos_ui    
 
-    def coindidir_arista_vertical_y_flecha(self, punto_1, punto_2, puntos):
+    def __coincidir_arista_vertical_y_flecha(self, punto_1, punto_2, puntos):
+        '''
+        Esta función se utiliza a la hora de dibujar los caminos v_i y u_i en las funciones dibujar_caminos_vi y dibujar_caminos_ui respectivamente. Esta función determina, si en una arista horizontal, de un camino v_i o u_i "hay espacio" para dibujar una 
+        flecha que indique el sentido del camino v_i o u_i. 
+        
+        En caso de que exista dicho espacio, se devolverá el valor de la coordenada x sobre la que se tiene que dibujar dicha flecha horizontal, siendo la variable que se devuelve la coordenada 'x' central de 
+        dicha flecha. En caso contrario, se devolverá el valor -100. 
+
+        Lo que se comprueba es que no haya ninguna arista vertical entre dichos puntos punto_1 y punto_2 que haga que la distancia entre dichos puntos y la arista vertical sea tan pequeña que no "quepa" la flecha.
+
+        Args:
+            punto_1: Punto inicial de la arista perteneciente a un camino v_i o u_i.
+            punto_2: Punto final de la arista perteneciente a un camino v_i o u_i.
+            puntos: Lista obtenida de la función obtener_puntos_nudo_dowker (y modificada posterioremente por la función dividir_nudo_en_arcos).
+        '''
         aristas=self.obtener_aristas(puntos)
         aristas_verticales=aristas[1]
         punto_medio_x=(punto_1[0]+ punto_2[0])/2
@@ -1251,7 +1776,22 @@ class Nudo:
         
         return punto_medio_x
     
-    def coincidir_arista_horizontal_y_flecha (self, punto_1, punto_2, puntos):
+    def __coincidir_arista_horizontal_y_flecha (self, punto_1, punto_2, puntos):
+        '''
+        Esta función se utiliza a la hora de dibujar los caminos v_i y u_i en las funciones dibujar_caminos_vi y dibujar_caminos_ui respectivamente. Esta función determina, si en una arista vertical, de un camino v_i o u_i "hay espacio" para dibujar una 
+        flecha que indique el sentido del camino v_i o u_i. 
+        
+        En caso de que exista dicho espacio, se devolverá el valor de la coordenada y sobre la que se tiene que dibujar dicha flecha vertical, siendo la variable que se devuelve la coordenada 'y' central de 
+        dicha flecha. En caso contrario, se devolverá el valor -100. 
+
+        Lo que se comprueba es que no haya ninguna arista horizontal entre dichos puntos punto_1 y punto_2 que haga que la distancia entre dichos puntos y la arista horizontal sea tan pequeña que no "quepa" la flecha.
+
+        Args:
+            punto_1: Punto inicial de la arista perteneciente a un camino v_i o u_i.
+            punto_2: Punto final de la arista perteneciente a un camino v_i o u_i.
+            puntos: Lista obtenida de la función obtener_puntos_nudo_dowker (y modificada posterioremente por la función dividir_nudo_en_arcos).
+        '''
+
         aristas=self.obtener_aristas(puntos)
         aristas_horizontales=aristas[0]
         punto_medio_y=(punto_1[1] + punto_2[1] )/2
@@ -1276,10 +1816,23 @@ class Nudo:
         return punto_medio_y
 
     def dibujar_caminos_vi (self, puntos, puntos_vi, numeros_cambio):
-        speed(7)
+        '''
+        Se utiliza el módulo turtle de python para dibujar lo siguiente:
+            El nudo dado por los puntos obtenidos de la función obtener_puntos_nudo_dowker dividido en arcos superiores (color azul) y arcos inferiores (color rojo).
+            Una flecha indicará la orientación del nudo. 
+            Los caminos v_i que rodeen a todos los arcos inferiores del nudo dado, representados con color verde. 
+            Una flecha que indique el sentido de cada uno de los caminos v_i (que debido a ser caminos v_i tenrán sentido antihorario), representadas con color verde y borde gris.
+            Espacios V_i que se encuentran en el interior de los caminos v_i, representados con color rojo claro.
+        
+        Args:
+            puntos: Lista obtenida de la función obtener_puntos_nudo_dowker (y modificada posterioremente por la función dividir_nudo_en_arcos)
+            puntos_vi: Lista de puntos de los caminos v_i, que se obtiene de la función obtener_caminos_vi.
+            numeros_cambio:  Lista de índices obtenida de la función dividir_nudo_en_arcos.
+        '''
+
         colormode(255)
         pencolor(121,221,0)
-        setup(1000, 480, 500, 240)
+
         title("Nudo dividido en arcos superiores e inferiores junto con caminos v_i y espacios V_i")
 
         for x in puntos_vi:
@@ -1300,7 +1853,7 @@ class Nudo:
             goto(primer_punto)
             end_fill()
 
-        if (self.numeros[0]>0):
+        if (self.__numeros[0]>0):
             superior=False
             superior_inicial=False
             pencolor("red")
@@ -1309,9 +1862,6 @@ class Nudo:
             superior_inicial=True
             pencolor("blue")
 
-        
-        
-        
         contador=0
         penup()
         pensize(2)
@@ -1368,7 +1918,7 @@ class Nudo:
             for i in range(len(x)-1):
                 if (flecha_dibujada==False):
                     if ( (x[i][0] != x[i+1][0]) and abs(x[i][0]- x[i+1][0] ) > 0.25  ): #Es decir, si las coordenadas x no son iguales y su distancia es mayor de 0.25
-                        x_medio=self.coindidir_arista_vertical_y_flecha(x[i], x[i+1], puntos)
+                        x_medio=self.__coincidir_arista_vertical_y_flecha(x[i], x[i+1], puntos)
                         if (x_medio != -100):
 
                         #x_medio=(x[i][0] + x[i+1][0])/2
@@ -1385,7 +1935,7 @@ class Nudo:
                         
                     
                     if ( (x[i][1] != x[i+1][1]) and abs(x[i][1]- x[i+1][1] ) > 0.25  ):
-                        y_medio=self.coincidir_arista_horizontal_y_flecha(x[i], x[i+1], puntos)
+                        y_medio=self.__coincidir_arista_horizontal_y_flecha(x[i], x[i+1], puntos)
                         if (y_medio!=-100):
                             if (x[i][1] > x[i+1][1]):
                                 punto1=[x[i][0]*100, (y_medio-0.05)*100]
@@ -1417,11 +1967,23 @@ class Nudo:
         Screen().bye()
 
     def dibujar_caminos_ui (self, puntos, puntos_ui, numeros_cambio):
-        speed(7)
+        '''
+        Se utiliza el módulo turtle de python para dibujar lo siguiente:
+            El nudo dado por los puntos obtenidos de la función obtener_puntos_nudo_dowker dividido en arcos superiores (color azul) y arcos inferiores (color rojo).
+            Una flecha indicará la orientación del nudo. 
+            Los caminos u_i que rodeen a todos los arcos superiores del nudo dado, representados con color morado. 
+            Una flecha que indique el sentido de cada uno de los caminos u_i (que debido a ser caminos u_i tenrán sentido horario), representadas con color morado.
+            Espacios U_i que se encuentran en el interior de los caminos u_i, representados con color azul claro.
+        
+        Args:
+            puntos: Lista obtenida de la función obtener_puntos_nudo_dowker (y modificada posterioremente por la función dividir_nudo_en_arcos)
+            puntos_ui: Lista de puntos de los caminos u_i, que se obtiene de la función obtener_caminos_ui.
+            numeros_cambio:  Lista de índices obtenida de la función dividir_nudo_en_arcos.
+        '''
+
         colormode(255)
         
         pencolor(152,0,255)
-        setup(1000, 480, 500, 240)
         title("Nudo dividido en arcos superiores e inferiores junto con caminos u_i y espacios U_i")
         for x in puntos_ui:
             penup()
@@ -1441,7 +2003,7 @@ class Nudo:
             goto(primer_punto)
             end_fill()
 
-        if (self.numeros[0]>0):
+        if (self.__numeros[0]>0):
             superior=False
             superior_inicial=False
             pencolor("red")
@@ -1470,6 +2032,13 @@ class Nudo:
                     else:
                         superior=True
                         pencolor("blue")
+                        '''if (puntos[contador-1][0] != puntos[contador][0]): #Si lo que ha variado es la coordenada 
+                            setpos(puntos[contador][0]*100,(puntos[contador][1]+0.02)*100)
+                            write('A_1')  
+                        else:
+                            setpos((puntos[contador][0]+0.03)*100,puntos[contador][1]*100)
+                            write('A')'''
+
                     
             contador+=1
 
@@ -1504,7 +2073,7 @@ class Nudo:
             for i in range(len(x)-1):
                 if (flecha_dibujada==False):
                     if ( (x[i][0] != x[i+1][0]) and abs(x[i][0]- x[i+1][0] ) > 0.25  ): #Es decir, si las coordenadas x no son iguales y su distancia es mayor de 0.25
-                        x_medio=self.coindidir_arista_vertical_y_flecha(x[i], x[i+1], puntos)
+                        x_medio=self.__coincidir_arista_vertical_y_flecha(x[i], x[i+1], puntos)
                         if (x_medio != -100):
 
                         #x_medio=(x[i][0] + x[i+1][0])/2
@@ -1521,7 +2090,7 @@ class Nudo:
                         
                     
                     if ( (x[i][1] != x[i+1][1]) and abs(x[i][1]- x[i+1][1] ) > 0.25  ):
-                        y_medio=self.coincidir_arista_horizontal_y_flecha(x[i], x[i+1], puntos)
+                        y_medio=self.__coincidir_arista_horizontal_y_flecha(x[i], x[i+1], puntos)
                         if (y_medio!=-100):
                             if (x[i][1] > x[i+1][1]):
                                 punto1=[x[i][0]*100, (y_medio+0.05)*100]
@@ -1545,12 +2114,515 @@ class Nudo:
                 goto(punto1)
                 end_fill()
 
-        
+            
         hideturtle()
         exitonclick()
         Screen().bye()
 
+    def __calcular_signo_cruce_arista_vertical(self, segmento, arista_vertical):
+        '''
+        Esta función es utilizada para calcular el signo de los componentes de los relatores de las presentaciones superior e inferior del nudo K. Comprueba para una arista vertical del nudo K dada por 'arista_vertical' y una arista horizontal del camino v_i o u_i 
+        dada por 'segmento' que se intersectan el signo de dicho cruce. 
+
+        Devuelve :
+            1 en caso de que la arista vertical del nudo y la arista horizontal del camino u_i o v_i formen un tornillo de la mano derecha.
+            -1 en caso de que la arista vertical del nudo y la arista horizontal del camino u_i o v_i formen un tornillo de la mano izquierda.
+
+        Args:
+            segmento: Lista de dos puntos, siendo los dos puntos de la arista_horizontal de u_i o v_i que estamos analizando.
+            arista_vertical: Arista vertical ordenada, es decir, un elemento de la lista obtenida de la función __obtener_aristas_inferiores_ordenadas u __obtener_aristas_superiores_ordenadas
+        '''
+
+        if (arista_vertical[1] > arista_vertical[2]):
+            if (segmento[0][0] > segmento[1][0]):
+                signo=1
+            else:
+                signo=-1
+        else:
+            if (segmento[0][0] < segmento[1][0]):
+                signo=1
+            else:
+                signo=-1
+        return signo
+
+    def __calcular_signo_cruce_arista_horizontal(self, segmento, arista_horizontal):
+        '''
+        Esta función es utilizada para calcular el signo de los componentes de los relatores de las presentaciones superior e inferior del nudo K. Comprueba para una arista horizontal  del nudo K dada por 'arista_horizontal' y una arista vertical del camino v_i o u_i 
+        dada por 'segmento' que se intersectan el signo de dicho cruce. 
+
+        Devuelve :
+            1 en caso de que la arista horizontal del nudo y la arista vertical del camino u_i o v_i formen un tornillo de la mano derecha.
+            -1 en caso de que la arista horizontal del nudo y la arista vertical del camino u_i o v_i formen un tornillo de la mano izquierda.
+
+        Args:
+            segmento: Lista de dos puntos, siendo los dos puntos de la arista_vertical de u_i o v_i que estamos analizando.
+            arista_horizontal: Arista horizontal ordenada, es decir, un elemento de la lista obtenida de la función __obtener_aristas_inferiores_ordenadas u __obtener_aristas_superiores_ordenadas
+        '''
+        if (arista_horizontal[1] < arista_horizontal[2]):
+            if (segmento[0][1] > segmento[1][1]):
+                signo=1
+            else:
+                signo=-1
+        
+        else:
+            if (segmento[0][1] < segmento[1][1]):
+                signo=1
+            else:
+                signo=-1
+                
+        return signo
+
+    def __interseccion_aristas_verticales(self, segmento, aristas_inferiores_o_superiores):
+        '''
+        Esta función se utiliza para hallar los relatores de las presentaciones superior e inferior del nudo. Si estamos calculando la presentación superior [inferior], se le pasa por parámetro las aristas superiores [inferiores] y obtendremos las aristas verticales 
+        superiores [inferiores], que se intersectan con el segmento horizontal del camino v_i [u_i] dado por 'segmento', que contendrá los dos puntos de una arista horizontal del camino v_i [u_i]. Posteriormente, calcularemos el signo de dicho cruce e introduciremos en una lista 
+        el valor obtenido de multiplicar el signo del cruce por el número de arco superior [inferior] en el que se encuentra la arista vertical que se intersecta con el segmento.
+
+        En caso de que más de una arista vertical intersecte al segmento horizontal, habría que ordenar los valores resultantes según el orden en el que han sido intersectados. 
+
+        Ejemplo:
+            La arista vertical [0, -1, 1] (recordemos que 0 es la coordenada 'x' y -1 es la coordenada 'y' del primer punto y 1 la coordenada 'y' del segundo punto) contenida en la 4ª posición de la lista de aristas_inferiores_o_superiores 
+            se intersecta con el segmento horizontal [[-1,0], [1,0]]. Por tanto, el signo del cruce sería -1 y se introduciría en la lista resultante el valor -1*5=-5 (es 5 porque la posición i de la lista la tiene asociada el arco superior [inferior] i+1)
+
+        Args:
+            segmento: Lista de dos puntos, siendo los dos puntos de la arista horizontal de u_i o v_i que estamos analizando.
+            aristas_inferiores_o_superiores: Lista de aristas obtenida de la función __obtener_aristas_inferiores u __obtener_aristas_superiores en función de si estamos calculando la presentación inferior o superior, de la que solo nos interesan las aristas verticales.
+        '''
+
+
+        contador=1
+        lista_x=[]
+        lista_indices=[]
+        for x in aristas_inferiores_o_superiores:
+            for i in x[1]:              #es decir, miramos solo las aristas superiores verticales (en caso de estar calculando la presentación superior) y las aristas inferiores verticales (en caso de estar calculando la presentación inferior)
+                if (i[1] < segmento[0][1] and  segmento[0][1] < i[2]):          #Comprobamos si se intersecta dicha arista vertical con el segmento horizontal que se pasa por parámetro
+                    if (segmento[0][0] < i[0] and i[0] < segmento[1][0]):
+                        lista_x.append(i[0])                                    #En caso de que se intersecten, introducimos en una lista la coordenada x del punto de intersección del segmento horizontal y la arsita vertical 
+                        signo_cruce=self.__calcular_signo_cruce_arista_vertical(segmento, i)
+                        lista_indices.append(signo_cruce*contador)              #En caso de que se intersecten introducimos en una lista la posición de la lista aristas_inferiores_o_superiores donde se encuentra la arista que se intersecta (que nos servirá para construir el relator) y el signo del cruce
+                    if (segmento[1][0] < i[0] and i[0] < segmento[0][0]):
+                        lista_x.append(i[0])
+                        signo_cruce=self.__calcular_signo_cruce_arista_vertical(segmento, i)
+                        lista_indices.append(signo_cruce*contador)
+                
+                if (i[2] < segmento[0][1] and  segmento[0][1] < i[1]):
+                    if (segmento[0][0] < i[0] and i[0] < segmento[1][0]):
+                        lista_x.append(i[0])
+                        signo_cruce=self.__calcular_signo_cruce_arista_vertical(segmento, i)
+                        lista_indices.append(signo_cruce*contador)
+                    if ( segmento[1][0] < i[0] and i[0] < segmento[0][0]):
+                        lista_x.append(i[0])
+                        signo_cruce=self.__calcular_signo_cruce_arista_vertical(segmento, i)
+                        lista_indices.append(signo_cruce*contador)
+            contador+=1
+        
+        if (len(lista_indices)>1):      #En caso de que haya más de una arista vertical que se intersecte con el semgmento dado por 'segmento' hay que ordenarlos según el orden de los cruces. 
+            if (segmento[0][0] < segmento[1][0]): #Hay que ordenarlos de menor a mayor.
+                lista_aux=[]
+                while(len(lista_indices)>1):
+                    valor_menor=100
+                    indice_menor=-1
+                    for i in range(len(lista_x)):
+                        if (lista_x[i] < valor_menor):
+                            valor_menor=lista_x[i]
+                            indice_menor=i
+                            
+                    lista_aux.append(lista_indices[indice_menor])
+                    lista_x.pop(indice_menor)
+                    lista_indices.pop(indice_menor)
+                lista_aux.append(lista_indices[0])
+                lista_indices=lista_aux
+            else: #Hay que ordenarlos de mayor a menor. 
+                lista_aux=[]
+                while(len(lista_indices)>1):
+                    valor_mayor=-100
+                    indice_mayor=-1
+                    for i in range(len(lista_x)):
+                        if (lista_x[i] > valor_mayor):
+                            valor_mayor=lista_x[i]
+                            indice_mayor=i
+                    lista_aux.append(lista_indices[indice_mayor])
+                    lista_x.pop(indice_mayor)
+                    lista_indices.pop(indice_mayor)
+                lista_aux.append(lista_indices[0])
+                lista_indices=lista_aux
+
+        return lista_indices
+
+    def __interseccion_aristas_horizontales(self, segmento, aristas_inferiores_o_superiores):
+        '''
+        Esta función se utiliza para hallar los relatores de las presentaciones superior e inferior del nudo. Si estamos calculando la presentación superior [inferior], se le pasa por parámetro las aristas superiores [inferiores] y obtendremos las aristas horizontales 
+        superiores [inferiores], que se intersectan con el segmento vertical del camino v_i [u_i] dado por 'segmento', que contendrá los dos puntos de una arista vertical del camino v_i [u_i] que estamos analizando. Posteriormente, calcularemos el signo de dicho cruce 
+        e introduciremos en una lista el valor obtenido de multiplicar el signo del cruce por el número de arco superior [inferior] en el que se encuentra la arista horizontal del nudo que se intersecta con el segmento.
+
+        En caso de que más de una arista horizontal intersecte al segmento vertical, habría que ordenar los valores resultantes según el orden en el que han sido intersectados. 
+
+        Ejemplo:
+            La arista horizontal [1, -2, 0] (recordemos que 1 es la coordenada 'y', -2 es la coordenada 'x' del primer punto y 0 la coordenada 'x' del segundo punto) contenida en la 1ª posición de la lista de aristas_inferiores_o_superiores 
+            se intersecta con el segmento vertical [[-1,5,0], [-1,5,2]]. Por tanto, el signo del cruce sería -1 y se introduciría en la lista resultante el valor -1*2=-2 (es 2 porque la posición i de la lista la tiene asociada el arco superior [inferior] i+1)
+
+        Args:
+            segmento: Lista de dos puntos, siendo los dos puntos de la arista vertical de u_i o v_i que estamos analizando.
+            aristas_inferiores_o_superiores: Lista de aristas obtenida de la función __obtener_aristas_inferiores u __obtener_aristas_superiores en función de si estamos calculando la presentación inferior o superior, de la que solo nos interesan las aristas horizontales.
+        '''
+
+        contador=1
+        lista_y=[]
+        lista_indices=[]
+        for x in aristas_inferiores_o_superiores:
+            for i in x[0]: #es decir, solo miramos las aristas horizontales superiores o inferiores
+                if (i[1] < segmento[0][0] and segmento[0][0] < i[2]):
+                    if (segmento[0][1] < i[0] and i[0] < segmento[1][1]):
+                        lista_y.append(i[0])
+                        signo_cruce=self.__calcular_signo_cruce_arista_horizontal(segmento, i)
+                        lista_indices.append(signo_cruce*contador)
+                    
+                    if (segmento[1][1] < i[0] and i[0] < segmento[0][1]):
+                        lista_y.append(i[0])
+                        signo_cruce=self.__calcular_signo_cruce_arista_horizontal(segmento, i)
+                        lista_indices.append(signo_cruce*contador)
+                
+                if (i[2] < segmento[0][0] and segmento[0][0] < i[1]):
+                    if (segmento[0][1] < i[0] and i[0] < segmento[1][1]):
+                        lista_y.append(i[0])
+                        signo_cruce=self.__calcular_signo_cruce_arista_horizontal(segmento, i)
+                        lista_indices.append(signo_cruce*contador)
+                    
+                    if (segmento[1][1] < i[0] and i[0] < segmento[0][1]):
+                        lista_y.append(i[0])
+                        signo_cruce=self.__calcular_signo_cruce_arista_horizontal(segmento, i)
+                        lista_indices.append(signo_cruce*contador)
+            contador+=1
+
+        if (len(lista_indices) > 1): #Hay que ordenarlos 
+            if (segmento[0][1] < segmento[1][1]): #De menor a mayor
+                lista_aux=[]
+                while(len(lista_indices) > 1):
+                    valor_menor=100
+                    indice_menor=-1
+                    for i in range(len(lista_y)):
+                        if (lista_y[i] < valor_menor):
+                            valor_menor=lista_y[i]
+                            indice_menor=i
+                            
+                    lista_aux.append(lista_indices[indice_menor])
+                    lista_y.pop(indice_menor)
+                    lista_indices.pop(indice_menor)
+                lista_aux.append(lista_indices[0])
+                lista_indices=lista_aux
+
+            else: #De mayor a menor 
+                lista_aux=[]
+                while(len(lista_indices)>1):
+                    valor_mayor=-100
+                    indice_mayor=-1
+                    for i in range(len(lista_y)):
+                        if (lista_y[i] > valor_mayor):
+                            valor_mayor=lista_y[i]
+                            indice_mayor=i
+                    lista_aux.append(lista_indices[indice_mayor])
+                    lista_y.pop(indice_mayor)
+                    lista_indices.pop(indice_mayor)
+                lista_aux.append(lista_indices[0])
+                lista_indices=lista_aux
+
+        return lista_indices
+
+    def __representar_relator_presentacion_superior(self, lista_indices): 
+        '''
+        Esta función toma una lista de enteros, cuyo valor absoluto indicará el arco superior del nudo con el que se intersecará el camino v_i y el signo que acompaña a dicho número en valor absoluto indicará el signo del cruce de dicho arco superior con el camino v_i.
+        Pasaremos esa lista de enteros al formato que tiene un relator.
+
+        Esta función es llamada por la función representar_presentacion_superior.
+
+        Ejemplo:
+            >>> __representar_relator_presentacion_superior([1,4,-2,-4]) 
+            "x₁x₄x₂⁻¹x₄⁻¹"
+        
+        Args: 
+            lista_indices: Lista de números enteros, que queremos transformar en una cadena con el formato de relator de la presentación superior.
+        '''
+        
+        SUPER=str.maketrans("-1", "⁻¹")
+        SUB=str.maketrans("123456789", "₁₂₃₄₅₆₇₈₉")
+
+        relator=""
+        for j in range(len(lista_indices)):
+            aux="x"
+            aux+=str(abs(lista_indices[j]))
+            aux2=aux.translate(SUB)
+            if (lista_indices[j] < 0):
+                aux2+="-"
+                aux2+=str(1)
+                aux3=aux2.translate(SUPER)
+                relator+=aux3
+            else:
+                relator+=aux2
+                
+        return relator
+
+    def __representar_relator_presentacion_inferior(self, lista_indices):
+        '''
+        Esta función toma una lista de enteros, cuyo valor absoluto indicará el arco inferior del nudo con el que se intersecará el camino u_i y el signo que acompaña a dicho número en valor absoluto indicará el signo del cruce de dicho arco inferior con el camino u_i.
+        Pasaremos esa lista de enteros al formato que tiene un relator.
+
+        Esta función es llamada por la función representar_presentacion_inferior.
+
+        Ejemplo:
+            >>> __representar_relator_presentacion_inferior([1,4,-2,-4]) 
+            "y₁y₄y₂⁻¹y₄⁻¹"
+        
+        Args: 
+            lista_indices: Lista de números enteros, que queremos transformar en una cadena con el formato de relator de la presentación inferior.
+        '''
+
+        SUPER=str.maketrans("-1", "⁻¹")
+        SUB=str.maketrans("123456789", "₁₂₃₄₅₆₇₈₉")
+
+        relator=""
+        for j in range(len(lista_indices)):
+            aux="y"
+            aux+=str(abs(lista_indices[j]))
+            aux2=aux.translate(SUB)
+            if (lista_indices[j] < 0):
+                aux2+="-"
+                aux2+=str(1)
+                aux3=aux2.translate(SUPER)
+                relator+=aux3
+            else:
+                relator+=aux2
+                
+        return relator
+    
+    def __representar_generadores_presentacion_superior (self):
+        '''
+        Este método calcula el número de arcos superiores del nudo que denotaremos por 'n' y develve una cadena con los 'n' generadores de la presentación superior del grupo de un nudo, siendo estos x₁, x₂...
+
+        Ejemplo:
+            >>> __representar_generadores_presentacion_superior()       Imaginemos que el número de arcos superiores es 5
+            "x₁, x₂, x₃, x₄, x₅"
+        
+        '''
+        num_arcos_super=self.numero_arcos_superiores()
+        generadores=""
+        SUB=str.maketrans("123456789", "₁₂₃₄₅₆₇₈₉")
+        contador=0
+        for i in range(num_arcos_super):
+            aux="x"
+            aux+=str(i+1)
+            aux2=aux.translate(SUB)
+            generadores+=aux2
+            if (contador!=((num_arcos_super)-1)):
+                generadores+=", "
+            contador+=1
+
+        return generadores
+
+    def __representar_generadores_presentacion_inferior(self):
+        '''
+        Este método calcula el número de arcos inferiores del nudo (que es el mismo que el número de arcos superiores) que denotaremos por 'n' y develve una cadena con los 'n' generadores de la presentación inferior del grupo de un nudo, siendo estos y₁, y₂...
+
+        Ejemplo:
+            >>> __representar_generadores_presentacion_inferior()               Imaginemos que el número de arcos superiores es 5
+            "y₁, y₂, y₃, y₄, y₅"
+        
+        '''
+        num_arc_infer=self.numero_arcos_superiores()
+        generadores=""
+        SUB=str.maketrans("123456789", "₁₂₃₄₅₆₇₈₉")
+        contador=0
+
+        for i in range(num_arc_infer):
+            aux="y"
+            aux+=str(i+1)
+            aux2=aux.translate(SUB)
+            generadores+=aux2
+            if (contador!=(num_arc_infer-1)):
+                generadores+=", "
+            contador+=1
+
+        return generadores
+
+    def obtener_presentacion_superior(self, puntos_vi, puntos, vector_cambio):
+        '''
+        Esta función calcula los n relatores de la presentación superior del nudo dado por los puntos 'puntos' pasados por parámetro, siendo n el numero de arcos superiores. Gracias a los caminos v_i obtenidos mediante la función 'obtener_caminos_vi',
+        en esta función calcularemos las aristas de los arcos superiores que intersectan con dichos caminos v_i, y el signo del cruce de estas con los caminos v_i y así seremos capaces de calcular los relatores de la presentación superior del grupo del nudo. 
+
+        El formato de los relatores será [+/- A₁, ... ,+/- Aₙ] indicando Aᵢ la que la i-ésima arista que intersecta al camino v_j pertenece al arco superior Aᵢ.
+
+        Args: 
+            puntos_vi: Lista de los puntos de los caminos vi obtenidos de la función obtener_caminos_vi
+            puntos: Lista obtenida de la función obtener_puntos_nudo_dowker (y modificada posterioremente por la función dividir_nudo_en_arcos)
+            vector_cambio:  Lista de índices obtenida de la función dividir_nudo_en_arcos.
+        '''
+
+        presentacion_superior=[]
+
+        aristas_superiores=self.__obtener_aristas_superiores_ordenadas(puntos, vector_cambio)
+
+        for x in puntos_vi:
+            lista_indices_i=[]
+            for i in range(len(x) -1):
+                segmento_a_estudiar=[]
+                segmento_a_estudiar.append(x[i])
+                segmento_a_estudiar.append(x[i+1])
+                if (x[i][0] != x[i+1][0]): #Es decir, si el segmento es horizontal tendremos que comprobar con que aristas verticales intersecta
+                    lista_indices_aux=self.__interseccion_aristas_verticales(segmento_a_estudiar, aristas_superiores)
+                    
+                    
+                else: #El segmento es vertical y tenemos que comprobar con que aristas horizntales intersecta 
+                    lista_indices_aux=self.__interseccion_aristas_horizontales(segmento_a_estudiar, aristas_superiores)
+                    
+                if lista_indices_aux:
+                    for j in lista_indices_aux:
+                        lista_indices_i.append(j)
+
+            segmento_a_estudiar=[]
+            segmento_a_estudiar.append(x[(len(x)-1)])
+            segmento_a_estudiar.append(x[0])
+
+            if (x[(len(x)-1)][0] != x[0][0] ):
+                lista_indices_aux=self.__interseccion_aristas_verticales(segmento_a_estudiar, aristas_superiores)
+                   
+            else:
+                lista_indices_aux=self.__interseccion_aristas_horizontales(segmento_a_estudiar, aristas_superiores)
+                
+                
+            if lista_indices_aux:
+                for j in lista_indices_aux:
+                    lista_indices_i.append(j)
+
+            
+            presentacion_superior.append(lista_indices_i)
+        
+        return presentacion_superior
+
+    def obtener_presentacion_inferior (self, puntos_ui, puntos, vector_cambio):
+        '''
+        Esta función calcula los n relatores de la presentación inferior del nudo dado por los puntos 'puntos' pasados por parámetro, siendo n el numero de arcos inferiores. Gracias a los caminos u_i obtenidos mediante la función 'obtener_caminos_ui',
+        en esta función calcularemos las aristas de los arcos inferiores que intersectan con dichos caminos u_i, y el signo del cruce de estas con los caminos u_i y así seremos capaces de calcular los relatores de la presentación inferior del grupo del nudo. 
+
+        El formato de los relatores será [+/- B₁, ... ,+/- Bₙ] indicando Bᵢ la que la i-ésima arista que intersecta al camino u_j pertenece al arco inferior Bᵢ.
+
+        Args: 
+            puntos_ui: Lista de los puntos de los caminos ui obtenidos de la función obtener_caminos_ui
+            puntos: Lista obtenida de la función obtener_puntos_nudo_dowker (y modificada posterioremente por la función dividir_nudo_en_arcos)
+            vector_cambio:  Lista de índices obtenida de la función dividir_nudo_en_arcos.
+        '''
+
+        presentacion_inferior=[]
+        
+        aristas_inferiores=self.__obtener_aristas_inferiores_ordenadas(puntos, vector_cambio)
+
+        for x in puntos_ui:
+            lista_indices_i_so=[]
+            for i in range(len(x) -1):
+                segmento_a_estudiar=[]
+                segmento_a_estudiar.append(x[i])
+                segmento_a_estudiar.append(x[i+1])
+                if (x[i][0] != x[i+1][0]): #Es decir, si el segmento es horizontal tendremos que comprobar con que aristas verticales intersecta
+                    lista_indices_aux=self.__interseccion_aristas_verticales(segmento_a_estudiar, aristas_inferiores)
+                         
+                else: #El segmento es vertical y tenemos que comprobar con que aristas horizntales intersecta 
+                    lista_indices_aux=self.__interseccion_aristas_horizontales(segmento_a_estudiar, aristas_inferiores)
+                    
+                if lista_indices_aux:
+                    
+                    for j in lista_indices_aux:
+                        
+                        lista_indices_i_so.append((-1)*j) #Lo multiplicamos por -1 porque los caminos u_j tienen sentido contrario al que indica el recorrido de los puntos del camino que hacemos 
+
+            segmento_a_estudiar=[]
+            segmento_a_estudiar.append(x[(len(x)-1)])
+            segmento_a_estudiar.append(x[0])
+
+            if (x[(len(x)-1)][0] != x[0][0] ):
+                lista_indices_aux=self.__interseccion_aristas_verticales(segmento_a_estudiar, aristas_inferiores)
+                
+            else:
+                lista_indices_aux=self.__interseccion_aristas_horizontales(segmento_a_estudiar, aristas_inferiores)
+                
+                
+
+            
+            if lista_indices_aux:
+                for j in lista_indices_aux:
+                    lista_indices_i_so.append((-1)*j) #Lo multiplicamos por -1 porque los caminos u_j tienen sentido contrario al que indica el recorrido de los puntos del camino que hacemos 
+
+            #Como el sentido es horario invertimos los valores de la lista
+            lista_indices_i=[]
+            lista_indices_i.append(lista_indices_i_so[0])
+            for i in range(len(lista_indices_i_so)-1):
+                lista_indices_i.append(lista_indices_i_so[len(lista_indices_i_so)-i-1])
+
+            presentacion_inferior.append(lista_indices_i)
+
+        return presentacion_inferior
+
+    def representar_presentacion_superior(self, presentacion_superior):
+        '''
+        Método que, dados los relatores de la presentación superior del grupo de un nudo, en el parámetro 'presentacion_superior', muestra por pantalla la presentación de dicho grupo en el formato propio de la presentacion superior del grupo de un nudo. 
+        Es decir, llama a las funciones __representar_generadores_presentacion_superior y __representar_relator_presentacion_superior para construir una cadena que sea la presentación superior del grupo del nudo analizado.
+
+        Ejemplo: 
+            >>> __representar_presentacion_superior([[6, -2, -1, 2], [3, 1, -3, -2], [1, 2, -1, -3], [3, -5, -4, 5], [6, 4, -6, -5], [4, 5, -4, -6]])
+            <x₁, x₂, x₃, x₄, x₅, x₆ : x₆x₂⁻¹x₁⁻¹x₂, x₃x₁x₃⁻¹x₂⁻¹, x₁x₂x₁⁻¹x₃⁻¹, x₃x₅⁻¹x₄⁻¹x₅, x₆x₄x₆⁻¹x₅⁻¹, x₄x₅x₄⁻¹x₆⁻¹>
+        
+        Args:
+            presentacion_superior: lista de los relatores de la presentación superior del grupo del nudo analizado, obtenida de la funcion obtener_presentacion_superior.
+        '''
+
+        pre_superior="<"
+        pre_superior+=self.__representar_generadores_presentacion_superior()
+        pre_superior+=" : "
+
+        contador=0 #este contador es para no introducir la última coma ","
+        for x in presentacion_superior:
+            pre_superior+=self.__representar_relator_presentacion_superior(x)
+            if (contador!=(len(presentacion_superior)-1)):
+                pre_superior+=", "
+            contador+=1
+
+        pre_superior+=">"
+        print(pre_superior)
+
+    def representar_presentacion_inferior(self, presentacion_inferior):
+        '''
+        Método que, dados los relatores de la presentación inferior del grupo de un nudo, en el parámetro 'presentacion_inferior', muestra por pantalla la presentación de dicho grupo en el formato propio de la presentacion inferior del grupo de un nudo. 
+        Es decir, llama a las funciones __representar_generadores_presentacion_inferior y __representar_relator_presentacion_inferior para construir una cadena que sea la presentación inferior del grupo del nudo analizado.
+
+        Ejemplo: 
+            >>> __representar_presentacion_superior([[-1, 3, 2, -3], [1, 3, -1, -2], [2, 4, -2, -3], [-4, 6, 5, -6], [4, 6, -4, -5], [5, 1, -5, -6]])
+            <y₁, y₂, y₃, y₄, y₅, y₆ : y₁⁻¹y₃y₂y₃⁻¹, y₁y₃y₁⁻¹y₂⁻¹, y₂y₄y₂⁻¹y₃⁻¹, y₄⁻¹y₆y₅y₆⁻¹, y₄y₆y₄⁻¹y₅⁻¹, y₅y₁y₅⁻¹y₆⁻¹>
+        
+        Args:
+            presentacion_inferior: lista de los relatores de la presentación inferior del grupo  del nudo analizado, obtenida de la funcion obtener_presentacion_inferior.
+        '''
+
+        pre_inferior="<"
+        pre_inferior+=self.__representar_generadores_presentacion_inferior()
+        pre_inferior+=" : "
+        
+        contador=0 #este contador es para no introducir la última coma ","
+        for x in presentacion_inferior:
+            pre_inferior+=self.__representar_relator_presentacion_inferior(x)
+            if (contador!=(len(presentacion_inferior)-1)):
+                pre_inferior+=", "
+            contador+=1
+        pre_inferior+=">"
+        print(pre_inferior)
+
     def obtener_puntos_nudo_dowker(self):
+        '''
+        Método que, dada la secuencia de enteros pares consecutivos en valor absoluto almacenada en la lista que es atributo de la clase nudo, calcula la secuencia de puntos de la aristas del nudo poligonal resultante. A dicha secuencia de enteros pares se le 
+        llamará notación Dowker de un nudo, y a través de esa información construiremos el nudo. 
+
+        Este método devolverá una lista de puntos, con una cantidad par de puntos donde un punto en una posición par de la lista significa que es el vértice de inicio de una arista (a la hora de dibujarlo) y en las posiciones impares de dicha lista se almacenarán
+        los vértices de fin de una arista. Por tanto, si el nudo resultante tiene dos aristas consecutivas, el punto en posición impar de la primera arista será el mismo que el punto en la siguiente posición de la lista de puntos.
+
+        Los puntos de la lista resultante serán de la forma [x, y] donde x e y son las coordenadas 'x' e 'y' de dicho punto.
+        '''
+
         cont_x=0    #Nos indicará la coordenada x de la posición por la que vamos añadiendo aristas
         cont_y=0    #Nos indicará la coordenada y de la posición por la que vamos añadiendo aristas
         
@@ -1576,23 +2648,19 @@ class Nudo:
         raiz_principal=True
         acabar_aniadir_nuevo_cruce=False
         
-        indice_permutacion=self.divide_dos_permutaciones()
+        indice_permutacion=self.__dividir_en_dos_subpermutaciones()
         if (indice_permutacion!=-1):        #Es decir, cuando se puede dividir en dos subpermutaciones
             minimo_raiz_antigua=0
             maximo_raiz_antigua=0
         print ('indice_permutacion: '+ str(indice_permutacion))
 
-        if (self.numeros[0]>0):             #Esto es para el primer valor
+        if (self.__numeros[0]>0):             #Esto es para el primer valor
             print('Contador='+ str(cont_x))
             punto=[cont_x-0.5,cont_y]
             puntos_aux.append(punto)
             punto=[cont_x-0.1,cont_y]
             puntos_aux.append(punto)
             
-            '''punto=[cont_x+0.1,cont_y]
-            puntos_aux.append(punto)
-            punto=[cont_x+0.5,cont_y]
-            puntos_aux.append(punto)'''
             cont_x=0.1
 
             
@@ -1613,25 +2681,25 @@ class Nudo:
         
         print ('Puntos_aux: ' + values2)
         
-        for x in range(len(self.numeros)):
+        for x in range(len(self.__numeros)):
             
             print ('x: ' + str(x))
-            print ('len(self.numeros): ' + str(len(self.numeros)))
+            print ('len(self.__numeros): ' + str(len(self.__numeros)))
 
             
             
             #Valores pares
             '''Este if es para asignarle SIGNO al cruce y para decir si es la SEGUNDA vez que se recorre un cruce'''
             volver=False
-            if 2*x+2 in self.numeros:       #Si es un cruce superior
+            if 2*x+2 in self.__numeros:       #Si es un cruce superior
                 signo='Pos' #Indica si se pasa por encima (Pos) o por debajo (Neg)
-                valor_asociado=2*self.numeros.index(2*x+2)+1
+                valor_asociado=2*self.__numeros.index(2*x+2)+1
                 if valor_asociado in lista:     #Si el valor asociado ya ha sido analizado
                     print('Llega ' +str(2*x+2) + ' '+str(valor_asociado))
                     volver=True
             else:   #Si es un cruce inferior
                 signo='Neg'
-                valor_asociado=2*self.numeros.index(-(2*x+2))+1
+                valor_asociado=2*self.__numeros.index(-(2*x+2))+1
                 if valor_asociado in lista:
                     print('Llega2 '+ str(-(2*x+2)) + ' '+str(valor_asociado))
                     volver=True
@@ -1678,24 +2746,24 @@ class Nudo:
 
                     while(aux==False):  #Esto se hace para ver cual es el siguiente cruce que está ya en la lista
                         contador_aux+=1
-                        print('contador_aux: ' + str(contador_aux) + ' suma: '+ str(contador_aux/2+x) + ' len: '+ str (len(self.numeros)))
+                        print('contador_aux: ' + str(contador_aux) + ' suma: '+ str(contador_aux/2+x) + ' len: '+ str (len(self.__numeros)))
                         
-                        if (int(2*x+2+ contador_aux)==(2*len(self.numeros)+1)): #Caso en el que podamos dividir en dos subpermutaciones, SOBRA
+                        if (int(2*x+2+ contador_aux)==(2*len(self.__numeros)+1)): #Caso en el que podamos dividir en dos subpermutaciones, SOBRA
                             aux=True
 
                         else:
                             if (contador_aux%2 ==1):
-                                if (abs(self.numeros[x+1]) in lista):
+                                if (abs(self.__numeros[x+1]) in lista):
                                     contador_ya_lista+=1                          
                                     aux=True
                             else:
-                                if 2*x+2+contador_aux in self.numeros:
-                                    vasoc=2*self.numeros.index(2*x+2+contador_aux)+1
+                                if 2*x+2+contador_aux in self.__numeros:
+                                    vasoc=2*self.__numeros.index(2*x+2+contador_aux)+1
                                     if (vasoc in lista) :
                                         contador_ya_lista+=1
                                         aux=True
                                 else:
-                                    vasoc=2*self.numeros.index(-(2*x+2+contador_aux))+1
+                                    vasoc=2*self.__numeros.index(-(2*x+2+contador_aux))+1
                                     if (vasoc in lista):
                                         contador_ya_lista+=1
                                         
@@ -1703,7 +2771,7 @@ class Nudo:
                     print('contador_aux: '+ str(contador_aux))
                     print ('contador_ya_lista: '+ str(contador_ya_lista))
 
-                    if (int(2*x+2+ contador_aux)==(2*len(self.numeros)+1)): #Caso en el que podamos dividir en dos subpermutaciones
+                    if (int(2*x+2+ contador_aux)==(2*len(self.__numeros)+1)): #Caso en el que podamos dividir en dos subpermutaciones
                         posicion_relativa_x=-0.5
                         fragmentos=(contador_aux-contador_ya_lista) #Esto es para ver en el número de fragmentos que se va a dividir el fragmento 
                         posicion_final_x= (cont_x*fragmentos/2 + posicion_relativa_x) / (fragmentos/2 +1)
@@ -1713,7 +2781,7 @@ class Nudo:
                         if ((contador_aux)%2 ==0):  
                             posicion_relativa_x=lista2[lista.index(vasoc)]
                         else:
-                            posicion_relativa_x=lista2[lista.index(abs(self.numeros[int(x+1+contador_aux/2)]))]
+                            posicion_relativa_x=lista2[lista.index(abs(self.__numeros[int(x+1+contador_aux/2)]))]
                         
                         posicion_final_x=(cont_x*contador_aux+posicion_relativa_x)/(contador_aux+1)
                     
@@ -2613,7 +3681,7 @@ class Nudo:
                                 puntos_aux.append(punto)
                                 puntos_aux.append(punto)
                                 
-                                if 2*x+2 not in self.numeros: #Es decir, si el cruce es inferior
+                                if 2*x+2 not in self.__numeros: #Es decir, si el cruce es inferior
                                     punto=[x_arriba[len(x_arriba)-1], 0.1]
                                     cont_y=-0.1
                                 else:
@@ -2868,7 +3936,7 @@ class Nudo:
                                 puntos_aux.append(punto)
                                 puntos_aux.append(punto)
                                 cont_x=posicion_x_final
-                                if 2*x+2 in self.numeros: #Es decir, si el cruce es superior llegará hasta el cero 
+                                if 2*x+2 in self.__numeros: #Es decir, si el cruce es superior llegará hasta el cero 
                                     cont_y=0
                                     punto=[cont_x,cont_y]
                                 else:
@@ -3057,15 +4125,15 @@ class Nudo:
 
             #Valores impares
 
-            if (x!=(len(self.numeros)-1)):  #Si no estamos en la última iteración del vector
+            if (x!=(len(self.__numeros)-1)):  #Si no estamos en la última iteración del vector
                 
                 if (indice_permutacion != x):
                     volver=False
-                    if abs(self.numeros[x+1]) in lista:
-                        print(str(2*x+3)+' '+ str(abs(self.numeros[x+1])))
+                    if abs(self.__numeros[x+1]) in lista:
+                        print(str(2*x+3)+' '+ str(abs(self.__numeros[x+1])))
                         volver=True
                     
-                    if (self.numeros[x+1]>0):   
+                    if (self.__numeros[x+1]>0):   
                         signo='Neg'
                     else:
                         signo='Pos'
@@ -3103,35 +4171,35 @@ class Nudo:
                             contador_ya_lista=0
                             while(aux==False):
                                 contador_aux+=1
-                                print('contador_aux: ' + str(contador_aux) + ' suma: '+ str(contador_aux+ 2*x+3) + ' len: '+ str (len(self.numeros)))
-                                if (int(contador_aux+ 2*x+3)==(2*len(self.numeros)+1)): #Caso en el que podamos dividir en dos subpermutaciones
+                                print('contador_aux: ' + str(contador_aux) + ' suma: '+ str(contador_aux+ 2*x+3) + ' len: '+ str (len(self.__numeros)))
+                                if (int(contador_aux+ 2*x+3)==(2*len(self.__numeros)+1)): #Caso en el que podamos dividir en dos subpermutaciones
                                     aux=True
                                 
                                 else:
 
                                     if ((contador_aux)%2 ==1):      #2*x+4
-                                        if 2*x+3+contador_aux in self.numeros:
-                                            vasoc=2*self.numeros.index(2*x+3+contador_aux)+1    #Nos devuelve el número impar asociado al número par 2*x+3+contador_aux
+                                        if 2*x+3+contador_aux in self.__numeros:
+                                            vasoc=2*self.__numeros.index(2*x+3+contador_aux)+1    #Nos devuelve el número impar asociado al número par 2*x+3+contador_aux
                                             print('vasoc' + str(vasoc))
                                             if (vasoc in lista):
                                                 contador_ya_lista+=1
                                                 aux=True
                                         else:
-                                            vasoc=2*self.numeros.index(-(2*x+3+contador_aux))+1
+                                            vasoc=2*self.__numeros.index(-(2*x+3+contador_aux))+1
                                             if (vasoc in lista):
                                                 contador_ya_lista+=1
                                                 aux=True 
                                         
                                     else:
-                                        if (abs(self.numeros[int(x+1+contador_aux/2)]) in lista ):
+                                        if (abs(self.__numeros[int(x+1+contador_aux/2)]) in lista ):
                                             contador_ya_lista+=1
-                                            if (abs(self.numeros[int(x+1+contador_aux/2)]) not in lista_fuera_raiz):
+                                            if (abs(self.__numeros[int(x+1+contador_aux/2)]) not in lista_fuera_raiz):
                                                 aux=True
 
                             print ('contador_ya_lista: ' + str(contador_ya_lista))     
                             print('contador_aux: '+ str(contador_aux))
                             
-                            if (int(contador_aux/2+x+1)==len(self.numeros)):
+                            if (int(contador_aux/2+x+1)==len(self.__numeros)):
                                 posicion_relativa_x=-0.5
                                 fragmentos=(contador_aux-contador_ya_lista) #Esto es para ver en el número de fragmentos que se va a dividir el fragmento 
                                 posicion_final_x= (cont_x*fragmentos/2 + posicion_relativa_x) / (fragmentos/2 +1)
@@ -3141,7 +4209,7 @@ class Nudo:
                                 if ((contador_aux)%2 ==1):  
                                     posicion_relativa_x=lista2[lista.index(vasoc)]
                                 else:
-                                    posicion_relativa_x=lista2[lista.index(abs(self.numeros[int (x+1+contador_aux/2)]))]
+                                    posicion_relativa_x=lista2[lista.index(abs(self.__numeros[int (x+1+contador_aux/2)]))]
                                 posicion_final_x=(cont_x*contador_aux + posicion_relativa_x)/(contador_aux+1) 
                             
                             print('cont_x: '+ str(cont_x))
@@ -3534,7 +4602,7 @@ class Nudo:
                             puntos_aux.append(punto)
                             raiz_principal=False   #Esta variable sirve para en caso de que volvamos y luego haya un cruce nuevo saber hacia donde nos debemos de mover en el eje x    
                         
-                        posicion_x_final=lista2[lista.index(abs(self.numeros[x+1]))]
+                        posicion_x_final=lista2[lista.index(abs(self.__numeros[x+1]))]
                         
                         if (acabar_aniadir_nuevo_cruce==True):
                             acabar_aniadir_nuevo_cruce=False
@@ -3618,9 +4686,9 @@ class Nudo:
                                     arriba=True
                         else:
 
-                            if abs(self.numeros[x+1]) in lista_fuera_raiz: #Es decir, si el número asociado a ese número impar no está en la raíz 
+                            if abs(self.__numeros[x+1]) in lista_fuera_raiz: #Es decir, si el número asociado a ese número impar no está en la raíz 
                                 print ('valor_asociado in lista_fuera_raiz_impar')
-                                valor_asociado=abs(self.numeros[x+1])
+                                valor_asociado=abs(self.__numeros[x+1])
                                 punto=[cont_x, cont_y] 
                                 puntos_aux.append(punto)
                                 
@@ -4060,7 +5128,7 @@ class Nudo:
                                         puntos_aux.append(punto)
                                         puntos_aux.append(punto)
                                         
-                                        if self.numeros[x+1]>0: #Es decir, si el cruce es inferior
+                                        if self.__numeros[x+1]>0: #Es decir, si el cruce es inferior
                                             punto=[x_arriba[len(x_arriba)-1], 0.1]
                                             cont_y=-0.1
                                         else:
@@ -4310,7 +5378,7 @@ class Nudo:
                                         puntos_aux.append(punto)
                                         puntos_aux.append(punto)
                                         cont_x=posicion_x_final
-                                        if self.numeros[x+1]<0: #Es decir, si el cruce es superior llegará hasta el cero 
+                                        if self.__numeros[x+1]<0: #Es decir, si el cruce es superior llegará hasta el cero 
                                             cont_y=0
                                             punto=[cont_x,cont_y]
                                         else:
@@ -4531,7 +5599,7 @@ class Nudo:
                     puntos_aux.append(punto)
                     cont_x+=0.5
                     posicion_x_final=cont_x
-                    if (self.numeros[x+1]>0):   #signo negativo
+                    if (self.__numeros[x+1]>0):   #signo negativo
                         punto=[cont_x-0.1, cont_y]
                         puntos_aux.append(punto)
                         cont_x+=0.1
@@ -4565,10 +5633,10 @@ class Nudo:
                 posicion_x_final=-0.5 #Dado que es el ultimo punto
                 contador=0
 
-                if (lista[len(lista)-1] in self.numeros):   #Tomamos su valor asociado
-                    vasoc=2*self.numeros.index(lista[len(lista)-1])+1
+                if (lista[len(lista)-1] in self.__numeros):   #Tomamos su valor asociado
+                    vasoc=2*self.__numeros.index(lista[len(lista)-1])+1
                 else:
-                    vasoc=2*self.numeros.index(- lista[len(lista)-1])+1
+                    vasoc=2*self.__numeros.index(- lista[len(lista)-1])+1
 
                 if (vasoc in lista_fuera_raiz):
                     y_fuera_raiz=y_lista_fuera_raiz[lista_fuera_raiz.index(vasoc)]
@@ -4924,315 +5992,59 @@ class Nudo:
             values = ','.join(str(v) for v in puntos_aux)
                                 
             print ('Puntos nuevos: ' + values)
+        
         return puntos_aux
        
     
 
+#x=Nudo(8, -10, 12, 2, 14, -6, 4) #Mis apuntes
 
+#x=Nudo(-8,10,16,-12,14,-6,-2,4) #nudocap3a5.pdf  
 
-n=Nudo(8, -10, 12, 2, 14, -6, 4) #Mis apuntes
+x=Nudo(4,6,2, 10, 12, 8)
 
-'''
-puntos=n.obtener_puntos_nudo_dowker()
-vector_cambio=n.dividir_nudo_en_arcos(puntos)
+#x=Nudo (6, 10, 2, 12, 4, 8)
 
-aristas=n.obtener_aristas(puntos)
+#x=Nudo(8, 10, 12, 2, 6, 4)         #https://www.youtube.com/watch?v=3o5CMWZ9qvo&ab_channel=MatthewSalomone
 
-print('Las aristas horizontales del nudo son: ')
-print (aristas[0])
-print('Las aristas verticales del nudo son: ')
-print (aristas[1])
+#x=Nudo (8,14,12,10,2,6,4)               #video de arriba
 
-print('Vector_cambio')
-print(vector_cambio)
+#x=Nudo (8,10,2,12,4, 6)                 #http://katlas.org/wiki/DT_(Dowker-Thistlethwaite)_Codes
 
-aristas_inferiores=n.obtener_aristas_inferiores(puntos, vector_cambio)
-print('Las aristas horizontales inferiores del nudo son: ')
-print(aristas_inferiores[0])
-print('Las aristas verticales inferiores del nudo son: ')
-print(aristas_inferiores[1])
+#x=Nudo(6,10,14,12,16,2,18,4,8)                  #http://katlas.org/wiki/DT_(Dowker-Thistlethwaite)_Codes
 
-print('OBTENER V_I')
-
-puntos_vi=n.obtener_caminos_v_i (puntos, aristas[0], aristas[1], vector_cambio)
-n.dibujar_caminos_vi(puntos, puntos_vi, vector_cambio)
-puntos_ui=n.obtener_caminos_u_i (puntos, aristas[0], aristas[1], vector_cambio)
-n.dibujar_caminos_ui(puntos, puntos_ui, vector_cambio)
-'''
-
-m=Nudo(-8,10,16,-12,14,-6,-2,4) #nudocap3a5.pdf
-
-'''
-puntos=m.obtener_puntos_nudo_dowker()
-vector_cambio=m.dividir_nudo_en_arcos(puntos)
-print('Vector_cambio')
-print(vector_cambio)
-
-aristas=m.obtener_aristas(puntos)
-
-print('Las aristas horizontales del nudo son: ')
-print (aristas[0])
-print('Las aristas verticales del nudo son: ')
-print (aristas[1])
-
-
-
-aristas_inferiores=m.obtener_aristas_inferiores(puntos, vector_cambio)
-print('Las aristas horizontales inferiores del nudo son: ')
-print(aristas_inferiores[0])
-print('Las aristas verticales inferiores del nudo son: ')
-print(aristas_inferiores[1])
-
-print('OBTENER V_I')
-
-puntos_vi=m.obtener_caminos_v_i (puntos, aristas[0], aristas[1], vector_cambio)
-m.dibujar_caminos_vi(puntos, puntos_vi, vector_cambio)
-puntos_ui=m.obtener_caminos_u_i (puntos, aristas[0], aristas[1], vector_cambio)
-m.dibujar_caminos_ui(puntos, puntos_ui, vector_cambio)
-'''
-
-p=Nudo(4,6,2, 10, 12, 8)
-
-'''
-puntos=p.obtener_puntos_nudo_dowker()
-aristas=p.obtener_aristas(puntos)
-
-print('Las aristas horizontales del nudo son: ')
-print (aristas[0])
-print('Las aristas verticales del nudo son: ')
-print (aristas[1])
-vector_cambio=p.dividir_nudo_en_arcos(puntos)
-print('Vector_cambio')
-print(vector_cambio)
-
-aristas_inferiores=p.obtener_aristas_inferiores(puntos, vector_cambio)
-print('Las aristas horizontales inferiores del nudo son: ')
-print(aristas_inferiores[0])
-print('Las aristas verticales inferiores del nudo son: ')
-print(aristas_inferiores[1])
-
-print('OBTENER V_I')
-
-
-puntos_vi=p.obtener_caminos_v_i (puntos, aristas[0], aristas[1], vector_cambio)
-p.dibujar_caminos_vi(puntos, puntos_vi, vector_cambio)
-p.dibujar_nudo_arcos(puntos, vector_cambio)
-puntos_ui=p.obtener_caminos_u_i (puntos, aristas[0], aristas[1], vector_cambio)
-p.dibujar_caminos_ui(puntos, puntos_ui, vector_cambio)
-'''
-#p.dibujar_nudo_arcos(puntos, vector_cambio)
-
-
-r=Nudo (6, 10, 2, 12, 4, 8)
-'''
-puntos=r.obtener_puntos_nudo_dowker()
-aristas=r.obtener_aristas(puntos)
-
-print('Las aristas horizontales del nudo son: ')
-print (aristas[0])
-print('Las aristas verticales del nudo son: ')
-print (aristas[1])
-vector_cambio=r.dividir_nudo_en_arcos(puntos)
-print('Vector_cambio')
-print(vector_cambio)
-
-aristas_inferiores=r.obtener_aristas_inferiores(puntos, vector_cambio)
-print('Las aristas horizontales inferiores del nudo son: ')
-print(aristas_inferiores[0])
-print('Las aristas verticales inferiores del nudo son: ')
-print(aristas_inferiores[1])
-
-print('OBTENER V_I')
-
-
-puntos_vi=r.obtener_caminos_v_i (puntos, aristas[0], aristas[1], vector_cambio)
-r.dibujar_caminos_vi(puntos, puntos_vi, vector_cambio)
-r.dibujar_nudo_arcos(puntos, vector_cambio)
-puntos_ui=r.obtener_caminos_u_i (puntos, aristas[0], aristas[1], vector_cambio)
-r.dibujar_caminos_ui(puntos, puntos_ui, vector_cambio)
-'''
-
-t=Nudo(8, 10, 12, 2, 6, 4)
-#puntos=t.obtener_puntos_nudo_dowker()         #https://www.youtube.com/watch?v=3o5CMWZ9qvo&ab_channel=MatthewSalomone
-'''
-puntos=t.obtener_puntos_nudo_dowker()
-aristas=t.obtener_aristas(puntos)
-
-print('Las aristas horizontales del nudo son: ')
-print (aristas[0])
-print('Las aristas verticales del nudo son: ')
-print (aristas[1])
-vector_cambio=t.dividir_nudo_en_arcos(puntos)
-print('Vector_cambio')
-print(vector_cambio)
-
-aristas_inferiores=t.obtener_aristas_inferiores(puntos, vector_cambio)
-print('Las aristas horizontales inferiores del nudo son: ')
-print(aristas_inferiores[0])
-print('Las aristas verticales inferiores del nudo son: ')
-print(aristas_inferiores[1])
-
-print('OBTENER V_I')
-
-
-puntos_vi=t.obtener_caminos_v_i (puntos, aristas[0], aristas[1], vector_cambio)
-t.dibujar_caminos_vi(puntos, puntos_vi, vector_cambio)
-t.dibujar_nudo_arcos(puntos, vector_cambio)
-puntos_ui=t.obtener_caminos_u_i (puntos, aristas[0], aristas[1], vector_cambio)
-t.dibujar_caminos_ui(puntos, puntos_ui, vector_cambio)
-'''
-u=Nudo (8,14,12,10,2,6,4)               #video de arriba
-#puntos=u.obtener_puntos_nudo_dowker()
-'''
-puntos=u.obtener_puntos_nudo_dowker()
-aristas=u.obtener_aristas(puntos)
-
-print('Las aristas horizontales del nudo son: ')
-print (aristas[0])
-print('Las aristas verticales del nudo son: ')
-print (aristas[1])
-vector_cambio=u.dividir_nudo_en_arcos(puntos)
-print('Vector_cambio')
-print(vector_cambio)
-
-aristas_inferiores=u.obtener_aristas_inferiores(puntos, vector_cambio)
-print('Las aristas horizontales inferiores del nudo son: ')
-print(aristas_inferiores[0])
-print('Las aristas verticales inferiores del nudo son: ')
-print(aristas_inferiores[1])
-
-print('OBTENER V_I')
-
-
-puntos_vi=u.obtener_caminos_v_i (puntos, aristas[0], aristas[1], vector_cambio)
-u.dibujar_caminos_vi(puntos, puntos_vi, vector_cambio)
-u.dibujar_nudo_arcos(puntos, vector_cambio)
-puntos_ui=u.obtener_caminos_u_i (puntos, aristas[0], aristas[1], vector_cambio)
-u.dibujar_caminos_ui(puntos, puntos_ui, vector_cambio)
-'''
-v=Nudo (8,10,2,12,4, 6)                 #http://katlas.org/wiki/DT_(Dowker-Thistlethwaite)_Codes
-#puntos=v.obtener_puntos_nudo_dowker()
-'''
-puntos=v.obtener_puntos_nudo_dowker()
-aristas=v.obtener_aristas(puntos)
-
-print('Las aristas horizontales del nudo son: ')
-print (aristas[0])
-print('Las aristas verticales del nudo son: ')
-print (aristas[1])
-vector_cambio=v.dividir_nudo_en_arcos(puntos)
-print('Vector_cambio')
-print(vector_cambio)
-
-aristas_inferiores=v.obtener_aristas_inferiores(puntos, vector_cambio)
-print('Las aristas horizontales inferiores del nudo son: ')
-print(aristas_inferiores[0])
-print('Las aristas verticales inferiores del nudo son: ')
-print(aristas_inferiores[1])
-
-print('OBTENER V_I')
-
-puntos_vi=v.obtener_caminos_v_i (puntos, aristas[0], aristas[1], vector_cambio)
-v.dibujar_caminos_vi(puntos, puntos_vi, vector_cambio)
-puntos_ui=v.obtener_caminos_u_i (puntos, aristas[0], aristas[1], vector_cambio)
-v.dibujar_caminos_ui(puntos, puntos_ui, vector_cambio)
-v.dibujar_nudo_arcos(puntos, vector_cambio)
-'''
-
-w=Nudo(6,10,14,12,16,2,18,4,8)                  #http://katlas.org/wiki/DT_(Dowker-Thistlethwaite)_Codes
-
-'''
-puntos=w.obtener_puntos_nudo_dowker()
-aristas=w.obtener_aristas(puntos)
-
-print('Las aristas horizontales del nudo son: ')
-print (aristas[0])
-print('Las aristas verticales del nudo son: ')
-print (aristas[1])
-vector_cambio=w.dividir_nudo_en_arcos(puntos)
-print('Vector_cambio')
-print(vector_cambio)
-
-aristas_inferiores=w.obtener_aristas_inferiores(puntos, vector_cambio)
-print('Las aristas horizontales inferiores del nudo son: ')
-print(aristas_inferiores[0])
-print('Las aristas verticales inferiores del nudo son: ')
-print(aristas_inferiores[1])
-
-print('OBTENER V_I')
-puntos_ui=w.obtener_caminos_u_i (puntos, aristas[0], aristas[1], vector_cambio)
-w.dibujar_caminos_ui(puntos, puntos_ui, vector_cambio)
-
-puntos_vi=w.obtener_caminos_v_i (puntos, aristas[0], aristas[1], vector_cambio)
-w.dibujar_caminos_vi(puntos, puntos_vi, vector_cambio)
-
-
-'''
-
-
-x=Nudo(4, 8, 10, -14, 2, -16, -18, -6, -12)         #http://katlas.org/wiki/DT_(Dowker-Thistlethwaite)_Codes
-
+#x=Nudo(4, 8, 10, -14, 2, -16, -18, -6, -12)         #http://katlas.org/wiki/DT_(Dowker-Thistlethwaite)_Codes
 
 puntos=x.obtener_puntos_nudo_dowker()
+
+vector_cambio=x.dividir_nudo_en_arcos(puntos)
+
 aristas=x.obtener_aristas(puntos)
 
-print('Las aristas horizontales del nudo son: ')
-print (aristas[0])
-print('Las aristas verticales del nudo son: ')
-print (aristas[1])
-vector_cambio=x.dividir_nudo_en_arcos(puntos)
-print('Vector_cambio')
-print(vector_cambio)
-aristas_superiores=x.obtener_aristas_superiores(puntos, vector_cambio)
-print('Aristas superiores horizontales: ')
-print(aristas_superiores[0])
-print('Aristas superiores verticales: ')
-print(aristas_superiores[1])
+print("Numero arcos superiores: "+ str(x.numero_arcos_superiores()))
 
+puntos_ui=x.obtener_caminos_ui(puntos, aristas, vector_cambio)
 
-aristas_inferiores=x.obtener_aristas_inferiores(puntos, vector_cambio)
-print('Las aristas horizontales inferiores del nudo son: ')
-print(aristas_inferiores[0])
-print('Las aristas verticales inferiores del nudo son: ')
-print(aristas_inferiores[1])
+puntos_vi=x.obtener_caminos_vi (puntos, aristas, vector_cambio)
 
-print('OBTENER V_I')
+presentacion_superior=x.obtener_presentacion_superior(puntos_vi, puntos, vector_cambio)
 
-puntos_ui=x.obtener_caminos_u_i(puntos, aristas[0], aristas[1], vector_cambio)
+print("Presentación superior del grupo del nudo: ")
+
+x.representar_presentacion_superior(presentacion_superior)
+
+presentacion_inferior=x.obtener_presentacion_inferior(puntos_ui, puntos, vector_cambio)
+
+print("Presentación inferior del grupo del nudo: ")
+
+x.representar_presentacion_inferior(presentacion_inferior)
 
 x.dibujar_caminos_ui(puntos, puntos_ui, vector_cambio)
 
-puntos_vi=x.obtener_caminos_v_i (puntos, aristas[0], aristas[1], vector_cambio)
+x.dibujar_nudo_arcos(puntos, vector_cambio)
 
 x.dibujar_caminos_vi(puntos, puntos_vi, vector_cambio)
 
-
-
-x.dibujar_nudo_arcos(puntos, vector_cambio)
-
-'''
-
-turtle.speed(1)
-contador=0
-turtle.penup()
-for x in puntos:
-    if (contador % 2==0):
-        punto1=(100*x[0], 100*x[1])
-    else:
-        punto2=(100*x[0], 100*x[1])
-        turtle.goto(punto1)
-        turtle.pendown()
-        turtle.goto(punto2)
-        turtle.penup()
-    contador+=1
-
-
-
-
-
-turtle.hideturtle()
-turtle.exitonclick()
-turtle.Screen().bye()
-'''
+x.dibujar_nudo(puntos)
 
 sys.exit()
