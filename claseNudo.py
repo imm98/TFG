@@ -13,7 +13,7 @@ from turtle import *
 
 setup(2000, 600, 0,0)
 
-speed(15)
+speed(60)
 
 
 class Nudo:
@@ -28,18 +28,64 @@ class Nudo:
         self.__numeros=[]
         for x in range(len(numeros)):
             self.__numeros.append(numeros[x])
+        
+        self.__eliminar_lazos()
         print(self.__numeros)
 
+    def __eliminar_lazos(self):
+        '''Método que dada la secuencia de números pares de la notación Dowker del nudo que queremos representar, elimina aquellos números pares que provoquen lazos.
+        Dado que si eliminamos un número par de la secuencia puede que no resulten ser números pares consecutivos en valor absoluto, tenemos que restar (si son positivos)
+        o sumar (si son negativos) 2 si dichos números pares son mayores en valor absoluto, al valor absoluto del número eliminado.
+        
+        Ejemplo:
+            >>> x=Nudo(6, -12, 2, 8, -4, -10)
+            >>> __eliminar_lazos()
+            (6, -10, 2, -4, -8)       
+        
+            #Esto se debe a que la notación Dowker completa de ese nudo será 
+                1    3   5   7   9   11  
+                6   -12  2   8  -4  -10
+
+            #Por lo tanto tras añadir el cruce 7 al nudo justó después se volverá a recorrer ya que el número asociado al 7 es el 8, por lo tanto se formará un lazo.
+            #Tras eliminarlo, quedaría la secuencia (6, -12, 2, -4, -10) que nos damos cuenta que en valor absoluto no son numeros pares consecutivos por lo que tenemos que sumar 2 tanto
+            #a -10 como a -12 y de ahí resulta la secuencia (6, -10, 2, -4, -8) 
+        '''
+
+        contador=0
+        numeros_eliminar=[]
+        for i in self.__numeros:
+            if (abs((abs(i)-(2*contador+1))) <=1):
+                numeros_eliminar.append(contador)
+            contador+=1
+        
+        contador=0
+        for j in numeros_eliminar:
+            self.__numeros.pop(j - contador)
+            contador+=1
+        
+        contador=0
+        for i in self.__numeros:
+            for j in numeros_eliminar:
+                if (abs(i) > (2*j+1)):
+                    if (i>0):
+                        self.__numeros[contador]-=2
+                    else:
+                        self.__numeros[contador]+=2
+            contador+=1   
+    
     def numero_arcos_superiores(self):
         '''
         Devuelve el número de arcos superiores que tendrá el nudo. 
         '''
 
         contador=0  #Esta variable almacenará la suma de arcos superiores e inferiores del nudo 
-        if (self.__numeros[0]>0):
-            superior_global=False       #Esta variable almacenará el estado del último cruce que hems recorrido
+        if (len(self.__numeros)>0):
+            if (self.__numeros[0]>0):
+                superior_global=False       #Esta variable almacenará el estado del último cruce que hems recorrido
+            else:
+                superior_global=True
         else:
-            superior_global=True
+            contador=2
         
         for x in range(len(self.__numeros)-1):
             
@@ -62,25 +108,26 @@ class Nudo:
                     contador+=1
                     superior_global=True
         
-        #Con esto comprobamos el último cruce 
-        if 2*len(self.__numeros) not in self.__numeros:
-            if (superior_global==True):
-                contador+=1
-                superior_global=False
-        else:                           #Si son superiores
-            if (superior_global==False):
-                contador+=1
-                superior_global=True
-        
-        #Con esto el primer cruce
-        if (self.__numeros[0]>0):
-            if (superior_global==True):
-                contador+=1
-                superior_global=False
-        else:
-            if (superior_global==False):
-                contador+=1
-                superior_global=True
+        if (len(self.__numeros)>0):
+            #Con esto comprobamos el último cruce 
+            if 2*len(self.__numeros) not in self.__numeros:
+                if (superior_global==True):
+                    contador+=1
+                    superior_global=False
+            else:                           #Si son superiores
+                if (superior_global==False):
+                    contador+=1
+                    superior_global=True
+            
+            #Con esto el primer cruce
+            if (self.__numeros[0]>0):
+                if (superior_global==True):
+                    contador+=1
+                    superior_global=False
+            else:
+                if (superior_global==False):
+                    contador+=1
+                    superior_global=True
 
         return(int(contador/2)) #Lo dividimos por dos ya que solo queremos el número de arcos superiores y dado que el número de arcos superiores e inferiores será el mismo 
 
@@ -130,9 +177,13 @@ class Nudo:
         punto_final=[-0.5,0]
         vector_cambio=[]
 
-        if (self.__numeros[0]>0):
-            superior=False
-            superior_inicial=False
+        if (len(self.__numeros)>0):
+            if (self.__numeros[0]>0):
+                superior=False
+                superior_inicial=False
+            else:
+                superior=True
+                superior_inicial=True
         else:
             superior=True
             superior_inicial=True
@@ -271,25 +322,107 @@ class Nudo:
         exitonclick()
         Screen().bye()
 
+    def __obtener_lista_puntos_A(self, vector_A):
+        '''
+        Este método toma como entrada una lista de puntos dada por 'vector_A' que será el vértice inferior del palo diagonal de la letra 'A' similar a la gráfica de la función y=x. Este método devuelve una lista de listas, en la que cada una de las listas contiene 
+        los puntos ordenados para representar la letra 'A' tomando como punto de inicio el punto del vector 'vector_A'
+
+        Este método se utiliza en la función dibujar_nudo_arcos para etiquetar cada arco superior del nudo con el término Ai
+
+        Args: 
+            vector_A: Lista de puntos que contiene los puntos de inicio a partir de los cuales queremos obtener los restantes vértices de la letra 'A'
+        '''
+
+        lista_puntos_A=[]
+        for i in range(len(vector_A)):
+            puntos_aux=[]
+            punto_partida=vector_A[i]
+            puntos_aux.append(punto_partida)
+            punto=[punto_partida[0]+5, punto_partida[1]+9]
+            puntos_aux.append(punto)
+            punto=[punto_partida[0]+7, punto_partida[1]+3]
+            puntos_aux.append(punto)
+            punto=[punto_partida[0]+3, punto_partida[1]+3]
+            puntos_aux.append(punto)
+            punto=[punto_partida[0]+7, punto_partida[1]+3]
+            puntos_aux.append(punto)
+            punto=[punto_partida[0]+10, punto_partida[1]]
+            puntos_aux.append(punto)
+            lista_puntos_A.append(puntos_aux)
+        return lista_puntos_A
+
+    def __obtener_lista_puntos_B(self, vector_B):
+        '''
+        Este método toma como entrada una lista de puntos dada por 'vector_B' que serán los vértices inferiores del palo vertical de la izquierda de la letra 'B'. Este método devuelve una lista de listas, en la que cada una de las listas contiene 
+        los puntos ordenados para representar la letra 'B' tomando como punto de inicio el punto del vector 'vector_B'
+
+        Este método se utiliza en la función dibujar_nudo_arcos para etiquetar cada arco inferior del nudo con el término Bi
+
+        Args: 
+            vector_B: Lista de puntos que contiene los puntos de inicio a partir de los cuales queremos obtener los restantes vértices de la letra 'B'
+        '''
+        
+        lista_puntos_B=[]
+        for i in range(len(vector_B)):
+            puntos_aux=[]
+            punto_partida=vector_B[i]
+            puntos_aux.append(punto_partida)
+            punto=[punto_partida[0], punto_partida[1]+9]
+            puntos_aux.append(punto)
+            punto=[punto_partida[0]+3, punto_partida[1]+9]
+            puntos_aux.append(punto)
+            punto=[punto_partida[0]+5, punto_partida[1]+6.75]
+            puntos_aux.append(punto)
+            punto=[punto_partida[0]+3, punto_partida[1]+4.5]
+            puntos_aux.append(punto)
+            punto=[punto_partida[0]+0, punto_partida[1]+4.5]
+            puntos_aux.append(punto)
+            punto=[punto_partida[0]+3, punto_partida[1]+4.5]
+            puntos_aux.append(punto)
+            punto=[punto_partida[0]+5, punto_partida[1]+2.25]
+            puntos_aux.append(punto)
+            punto=[punto_partida[0]+3, punto_partida[1]]
+            puntos_aux.append(punto)
+            puntos_aux.append(punto_partida)
+            lista_puntos_B.append(puntos_aux)
+        return lista_puntos_B
+
     def dibujar_nudo_arcos(self, puntos, numeros_cambio):
         '''
         Se dibuja el nudo dado por los puntos obtenidos de la función obtener_puntos_nudo_dowker en una ventana emergente.
         En dicho dibujo, se representarán con color rojo los arcos superiores y con color azul los arcos inferiores.
         Una flecha indicará la orientación del nudo. 
 
+        También se indicará la denotación de cada arco superior (por A1, ..., An) y de cada arco inferior (por B1, ..., Bn)
         Args: 
             puntos: Lista obtenida de la función obtener_puntos_nudo_dowker (y modificada posterioremente por la función dividir_nudo_en_arcos) 
             numeros_cambio: Lista de índices obtenida de la función dividir_nudo_en_arcos.
         '''
-        if (self.__numeros[0]>0):
-            superior_inicial=False  #Esta variable se utiliza para saber de que color debemos dibujar la flecha 
-            superior=False
-            pencolor("red")
+        punto=[-40, 15]
+        vector_A=[]
+        vector_B=[]
+        cambio=False
+
+        if (len(self.__numeros)>0):
+            if (self.__numeros[0]>0):
+                superior_inicial=False  #Esta variable se utiliza para saber de que color debemos dibujar la flecha 
+                superior=False
+                pencolor("red")
+                vector_B.append(punto)
+                
+            else:
+                superior_inicial=True
+                superior=True
+                pencolor("blue")
+                vector_A.append(punto)
         else:
             superior_inicial=True
             superior=True
             pencolor("blue")
+            vector_A.append(punto)
+            
 
+        
         title("Nudo dividido en arcos superiores e inferiores")
         colormode(255)
         contador=0
@@ -300,7 +433,27 @@ class Nudo:
                 punto1=(100*x[0], 100*x[1])
             else:
                 punto2=(100*x[0], 100*x[1])
-                
+
+                if (cambio==True):
+                    if (punto1[0] != punto2[0]):
+                        punto_aux=[(punto1[0]+punto2[0])/2, punto1[1]+5]
+                        if (superior==True):
+                            vector_A.append(punto_aux)
+                        else:
+                            vector_B.append(punto_aux)
+                            
+                    else:
+                        if (punto1[1] > punto2[1]):
+                            punto_aux=[punto1[0]+10, punto1[1]*0.3+ punto2[1]*0.7]
+                        else:
+                            punto_aux=[punto1[0]+10, punto1[1]*0.7+ punto2[1]*0.3]
+                        
+                        if (superior==True):
+                            vector_A.append(punto_aux)
+                        else:
+                            vector_B.append(punto_aux)
+
+                    cambio=False
                     
                     
                 goto(punto1)
@@ -314,6 +467,7 @@ class Nudo:
                     else:
                         superior=True
                         pencolor("blue")
+                    cambio=True
                     
             contador+=1
 
@@ -341,6 +495,101 @@ class Nudo:
         punto_aux=[-0.38*100, 0.07*100]
         goto(punto_aux)
         end_fill()
+
+        lista_puntos_A=self.__obtener_lista_puntos_A(vector_A)
+        lista_puntos_B=self.__obtener_lista_puntos_B(vector_B)
+
+        
+        pensize(1.5)
+
+        pencolor("blue")
+        contador_arcos_sup=1
+        evitado=False
+        for i in lista_puntos_A:
+            penup()
+            contador=0
+            if (contador_arcos_sup<=self.numero_arcos_superiores() and (contador_arcos_sup!=self.numero_arcos_superiores() or evitado==False)):
+                for j in range(len(i)):
+                    goto(i[j])
+                    if (contador==0):
+                        pendown()
+                    contador+=1
+                penup()
+                punto=[i[0][0]+13, i[0][1]-5]
+                goto(punto)
+                pendown()
+
+                if (contador_arcos_sup==1 and superior_inicial==True):
+                    if (evitado==False):
+                        numero=str(len(lista_puntos_B))
+                        evitado=True              #Para que no se vuelva a meter aquí 
+                    else:
+                        numero=str(contador_arcos_sup)
+                        contador_arcos_sup+=1
+                else:  
+                    numero=str(contador_arcos_sup)
+                    contador_arcos_sup+=1
+
+                write(numero)
+            
+
+
+        pencolor("red")
+        contador_arcos_inf=1
+        if(len(self.__numeros)>0):
+
+            for i in lista_puntos_B:
+                penup()
+                contador=0
+                if (contador_arcos_inf<=self.numero_arcos_superiores() and (contador_arcos_inf!=self.numero_arcos_superiores() or ((0 in vector_cambio) or superior_inicial==False))):
+                    for j in range(len(i)):
+                        goto(i[j])
+                        if (contador==0):
+                            pendown()
+                        contador+=1
+                    penup()
+                    punto=[i[0][0]+10, i[0][1]-5]
+                    goto(punto)
+                    pendown()
+                    
+
+                    
+
+
+                    numero=str(contador_arcos_inf)
+                    contador_arcos_inf+=1
+
+                    
+                    write(numero)
+        
+        else:
+            for i in lista_puntos_B:
+                penup()
+                contador=0
+                
+                for j in range(len(i)):
+                    goto(i[j])
+                    if (contador==0):
+                        pendown()
+                    contador+=1
+                penup()
+                punto=[i[0][0]+10, i[0][1]-5]
+                goto(punto)
+                pendown()
+                
+
+                
+
+
+                numero=str(contador_arcos_inf)
+                contador_arcos_inf+=1
+
+                
+                write(numero)
+            
+        
+        
+        
         hideturtle()
         exitonclick()
         Screen().bye()
@@ -422,10 +671,13 @@ class Nudo:
 
         aristas_horizontales=[]
         aristas_verticales=[]
-        if (self.__numeros[0]>0):
-            superior=False
-            punto_inicial=puntos[0]
-            horizontal=True
+        if (len(self.__numeros)>0):
+            if (self.__numeros[0]>0):
+                superior=False
+                punto_inicial=puntos[0]
+                horizontal=True
+            else:
+                superior=True
         else:
             superior=True
         
@@ -517,9 +769,15 @@ class Nudo:
 
         aristas_horizontales=[]
         aristas_verticales=[]
-        if (self.__numeros[0]>0):
-            superior=False
-            
+
+        if (len(self.__numeros)>0):
+            if (self.__numeros[0]>0):
+                superior=False
+                
+            else:
+                superior=True
+                punto_inicial=puntos[0]
+                horizontal=True
         else:
             superior=True
             punto_inicial=puntos[0]
@@ -626,8 +884,12 @@ class Nudo:
         aristas=[]
         valor_salir=-1   #Este valor servirá para en caso de que tomemos las últimas aristas del nudo para meterlas como dentro del primer conjunto posterioremente no analizarlas
         
-        if (self.__numeros[0]>0):
-            superior=False     
+        if(len(self.__numeros)>0):
+            if (self.__numeros[0]>0):
+                superior=False     
+            else:
+                superior=True
+
         else:
             superior=True
         
@@ -772,9 +1034,14 @@ class Nudo:
         aristas_verticales_i=[]
         aristas=[]
         valor_salir=-1   #Este valor servirá para en caso de que tomemos las últimas aristas del nudo para meterlas como dentro del primer conjunto posterioremente no analizarlas
-        if (self.__numeros[0]>0):
-            superior=False
-            
+
+        if(len(self.__numeros)>0):
+            if (self.__numeros[0]>0):
+                superior=False
+                
+            else:
+                superior=True
+
         else:
             superior=True
             
@@ -1348,7 +1615,7 @@ class Nudo:
                 
                 borde_abajo=limite
 
-            bordes_laterales=self.__calcular_bordes_laterales(punto_inicial, puntos, valor_inicial+i, aristas[1], aristas_inferiores_o_superiores[0])
+            bordes_laterales=self.__calcular_bordes_laterales(punto_inicial, puntos, valor_final, aristas[1], aristas_inferiores_o_superiores[0])
             bordes_aux=[bordes_laterales, bordes_laterales, borde_arriba, borde_abajo]
             if (contador!=0):
                 if ( (giros[len(giros)-1]== "ab_i") or (giros[len(giros)-1]== "ar_i") ):    #Si el giro es en el lado izquierdo, en la lista de bordes anterior teníamos el borde de la izda a 0 por lo que lo modificamos
@@ -1656,19 +1923,26 @@ class Nudo:
             for i in range(vector_cambio[0]+3):    #Le añado dos puntos más (por ello pongo +3) para poder comparar el punto final con el punto siguiente al final 
                 lista_puntos_auxiliares.append(puntos[i])
             
-            if (self.__numeros[0]>0):         #Es decir el caso en el que el arco que pase por encima del primer cruce sea un cruce inferior
-                
-                bordes_y_giros=self.__obtener_bordes_y_giros_vi_ui(lista_puntos_auxiliares, aristas, 1, len(lista_puntos_auxiliares)-3, aristas_inferiores)
-                puntos_vi_aux=self.__obtener_puntos_vi_ui(bordes_y_giros, lista_puntos_auxiliares, 1,len(lista_puntos_auxiliares)-3)
-                puntos_vi.append(puntos_vi_aux)
-                modulo2=1
-                contador+=1
+            if(len(self.__numeros)>0):
+                if (self.__numeros[0]>0):         #Es decir el caso en el que el arco que pase por encima del primer cruce sea un cruce inferior
+                    
+                    bordes_y_giros=self.__obtener_bordes_y_giros_vi_ui(lista_puntos_auxiliares, aristas, 1, len(lista_puntos_auxiliares)-3, aristas_inferiores)
+                    puntos_vi_aux=self.__obtener_puntos_vi_ui(bordes_y_giros, lista_puntos_auxiliares, 1,len(lista_puntos_auxiliares)-3)
+                    puntos_vi.append(puntos_vi_aux)
+                    modulo2=1
+                    contador+=1
+                else:
+                    modulo2=0
+            
             else:
                 modulo2=0
 
         else:
-            if (self.__numeros[0]>0):
-                modulo2=0
+            if (len(self.__numeros)>0):
+                if (self.__numeros[0]>0):
+                    modulo2=0
+                else:
+                    modulo2=1
             else:
                 modulo2=1
 
@@ -1707,25 +1981,34 @@ class Nudo:
             for i in range(vector_cambio[0]+3):    #Le añado dos puntos más (por ello pongo +3) para poder comparar el punto final con el punto siguiente al final 
                 lista_puntos_auxiliares.append(puntos[i])
             
-            if (self.__numeros[0] < 0): #Es decir el caso en el que el arco que pase por encima del primer cruce sea un cruce superior
+            if (len(self.__numeros)>0):
+                if (self.__numeros[0] < 0): #Es decir el caso en el que el arco que pase por encima del primer cruce sea un cruce superior
+                    bordes_y_giros=self.__obtener_bordes_y_giros_vi_ui(lista_puntos_auxiliares, aristas, 1, len(lista_puntos_auxiliares)-3, aristas_superiores)
+                    puntos_ui_aux=self.__obtener_puntos_vi_ui(bordes_y_giros, lista_puntos_auxiliares, 1,len(lista_puntos_auxiliares)-3)
+                    puntos_ui.append(puntos_ui_aux)
+                    modulo2=1
+                    contador+=1
+                else:
+                    modulo2=0
+            else:
                 bordes_y_giros=self.__obtener_bordes_y_giros_vi_ui(lista_puntos_auxiliares, aristas, 1, len(lista_puntos_auxiliares)-3, aristas_superiores)
                 puntos_ui_aux=self.__obtener_puntos_vi_ui(bordes_y_giros, lista_puntos_auxiliares, 1,len(lista_puntos_auxiliares)-3)
                 puntos_ui.append(puntos_ui_aux)
                 superior=False
                 modulo2=1
                 contador+=1
-            else:
-                superior=True
-                modulo2=0
         
         else:
-            if (self.__numeros[0] < 0):
-                superior=True
-                modulo2=0
+            if(len(self.__numeros)>0):
+
+                if (self.__numeros[0] < 0):
+                    modulo2=0
+                else:
+                    modulo2=1
+
             else:
-                superior=False
-                modulo2=1
-        
+                modulo2=0
+            
         
         for i in range(len(vector_cambio)-1):
             if (i%2==modulo2):
@@ -1734,6 +2017,15 @@ class Nudo:
                 puntos_ui_aux=self.__obtener_puntos_vi_ui(bordes_y_giros, puntos, vector_cambio[i], vector_cambio[i+1])
                 puntos_ui.append(puntos_ui_aux)
                 contador+=1
+        if (len(self.__numeros)>0):
+            if (self.__numeros[0]<0):
+                aux=puntos_ui[0]
+                puntos_ui.pop(0)
+                puntos_ui.append(aux)
+        else:
+            aux=puntos_ui[0]
+            puntos_ui.pop(0)
+            puntos_ui.append(aux)
 
         return puntos_ui    
 
@@ -1852,11 +2144,16 @@ class Nudo:
             
             goto(primer_punto)
             end_fill()
-
-        if (self.__numeros[0]>0):
-            superior=False
-            superior_inicial=False
-            pencolor("red")
+            
+        if (len(self.__numeros)>0):
+            if (self.__numeros[0]>0):
+                superior=False
+                superior_inicial=False
+                pencolor("red")
+            else:
+                superior=True
+                superior_inicial=True
+                pencolor("blue")
         else:
             superior=True
             superior_inicial=True
@@ -2003,10 +2300,15 @@ class Nudo:
             goto(primer_punto)
             end_fill()
 
-        if (self.__numeros[0]>0):
-            superior=False
-            superior_inicial=False
-            pencolor("red")
+        if (len(self.__numeros)>0):
+            if (self.__numeros[0]>0):
+                superior=False
+                superior_inicial=False
+                pencolor("red")
+            else:
+                superior=True
+                superior_inicial=True
+                pencolor("blue")
         else:
             superior=True
             superior_inicial=True
@@ -2460,6 +2762,16 @@ class Nudo:
 
         aristas_superiores=self.__obtener_aristas_superiores_ordenadas(puntos, vector_cambio)
 
+        if (len(self.__numeros)>0):
+            if (self.__numeros[0]<0):      #Hay que reordenar el vector de aristas
+                aux=aristas_superiores[0]
+                aristas_superiores.pop(0)
+                aristas_superiores.append(aux)
+        else:
+            aux=aristas_superiores[0]
+            aristas_superiores.pop(0)
+            aristas_superiores.append(aux)
+
         for x in puntos_vi:
             lista_indices_i=[]
             for i in range(len(x) -1):
@@ -2623,52 +2935,81 @@ class Nudo:
         Los puntos de la lista resultante serán de la forma [x, y] donde x e y son las coordenadas 'x' e 'y' de dicho punto.
         '''
 
-        cont_x=0    #Nos indicará la coordenada x de la posición por la que vamos añadiendo aristas
-        cont_y=0    #Nos indicará la coordenada y de la posición por la que vamos añadiendo aristas
+        cont_x=0    #Nos indicará la coordenada x de la posición por la que vamos añadiendo los puntos de las aristas del nudo. 
+        cont_y=0    #Nos indicará la coordenada y de la posición por la que vamos añadiendo los puntos de las aristas del nudo
         
-        y_arriba=[] #Lista que nos indicará la altura de las aristas que pasen por encima del nudo
-        x_arriba=[] #Lista de listas que nos indicará el valor mínimo y máximo de x para la altura y del vector de arriba    
-        y_abajo=[]
-        x_abajo=[]
+        y_arriba=[]     #Lista que nos indicará la altura de las aristas que pasen por encima del nudo
+        x_arriba=[]     #Lista de listas que nos indicará el valor mínimo y máximo de x para la altura y del vector de arriba    
+        y_abajo=[]      #Lista que nos indicará la altura de las aristas que pasen por debajo del nudo
+        x_abajo=[]      #Lista de listas que nos indicará el valor mínimo y máximo de x para la altura y del vector de abajo   
         
-        y_lista_fuera_raiz=[]
-        lista_fuera_raiz=[]
-        x_lista_fuera_raiz=[]
+        
+        y_lista_fuera_raiz=[]           #Lista que nos indicará la altura de las aristas que no formen parte de la raíz principal del nudo 
+        x_lista_fuera_raiz=[]           #Lista que nos indicará el valor mínimo y máximo de la coordenada 'x' de las aristas que no formen parte de la raíz principal del nudo para la altura 'y' (determinada por el valor en el vector y_lista_fuera_raiz)
+        lista_fuera_raiz=[]             #Lista que contendrá los 'num_analizados' de los cruces que no se encuentren en la raíz principal del nudo 
+        y_lista_fuera_raiz_altura=[]    #Lista que nos indicará, en caso de tener una arista que no formen parte de la raíz principal del nudo, si en los bordes de dicha arista el nudo continuará en ambos bordes para arriba ("ar") en ambos para abajo ("ab"), en el de la izquierda para arriba y en el de la derecha para abajo ("arab") o en el de la izquierda para abajo y en el de la deecha para arriba ("abar")
 
+        y_lista_intermedia=[]           #Lista que va a contener la coordenada 'y' de las aristas horizontales que estén anidadas por la izquierda y la derecha a una arista vertical creciente [decreciente]. 
+        x_arriba_lista_intermedia=[]    #Coordeanada 'x' del vértice de la arista vertical que comparte con la arista horizontal analizada que tiene a dicho punto como el punto de dicha arista con menor coordenada 'y'
+        x_abajo_lista_intermedia=[]     #Coordeanada 'x' del vértice de la arista vertical que comparte con la arista horizontal analizada que tiene a dicho punto como el punto de dicha arista con mayor coordenada 'y'
 
-        y_lista_intermedia=[]
-        x_arriba_lista_intermedia=[]
-        x_abajo_lista_intermedia=[]
-        puntos_aux=[]   #Va a contener los diferentes vértices de las aristas del nudo resultante
-        
+        indices_ultimos_puntos=[]       #Esto sirve por si tenemos que retroceder 
+        problema_choque=False           #Esta variable nos indicará en caso de estar a True que no podemos seguir recorriendo el nudo, y en ese caso, habrá que aplicar recursividad
+        puntos_aux=[]                   #Va a contener los diferentes vértices de las aristas del nudo resultante
         
         lista=[]    #Contiene los valores de los cruces que hemos recorrido 
-        lista2=[]   #Contiene la coordenada x de los cruces que vamos obteniendo en la lista 1
+        lista2=[]   #Contiene la coordenada x de los cruces que vamos obteniendo en 'lista'
 
-        arriba=True #Creo que se puede eliminar
-        raiz_principal=True
-        acabar_aniadir_nuevo_cruce=False
-        
+        arriba=True                             #Nos indica si estamos en la parte de arriba (y>0) o la de abajo (y<0) del nudo y en caso de ser y=0 arriba==True si el punto añadido previamente tiene coordenada y<0 y False en otro caso
+        raiz_principal=True                     #Nos indica si todavía no hemos pasado por un cruce dos veces, es decir, si estamos en la raíz principal del nudo (y=0)
+        acabar_aniadir_nuevo_cruce=False        #Esto nos indica si acabamos de aniadir un nuevo cruce al nudo, es decir, si acabamos de recorrer un cruce por primera vez
+
+
+        #Las listas que se definien a continuación sirven para almacenar las variables definidas anteriormente, para en caso de tener que utilizar la recursividad, tener la información de los estados pasados de todas las variables.
+        indices_ultimos_puntos_analizados=[]
+        y_arriba_analizados=[]
+        y_abajo_analizados=[]
+        x_arriba_analizados=[]
+        x_abajo_analizados=[]
+
+        y_lista_fuera_raiz_analizados=[]
+        x_lista_fuera_raiz_analizados=[]
+        lista_fuera_raiz_analizados=[]
+        y_lista_fuera_raiz_altura_analizados=[]
+
+        y_lista_intermedia_analizados=[]
+        x_arriba_lista_intermedia_analizados=[]
+        x_abajo_lista_intermedia_analizados=[]
+        lista_analizados=[]
+        lista2_analizados=[]
+        arriba_analizados=[]
+        raiz_principal_analizados=[]
+        acabar_aniadir_nuevo_cruce_analizados=[]
+        cont_x_analizados=[]
+        cont_y_analizados=[]
+
+        x_maximo=-1 #Este va a ser el mayor valor de la coordenada x de la raiz principal que servirá por si tenemos que dar la vuelta por la derecha del nudo
+
         indice_permutacion=self.__dividir_en_dos_subpermutaciones()
         if (indice_permutacion!=-1):        #Es decir, cuando se puede dividir en dos subpermutaciones
             minimo_raiz_antigua=0
             maximo_raiz_antigua=0
-        print ('indice_permutacion: '+ str(indice_permutacion))
 
-        if (self.__numeros[0]>0):             #Esto es para el primer valor
-            print('Contador='+ str(cont_x))
-            punto=[cont_x-0.5,cont_y]
-            puntos_aux.append(punto)
-            punto=[cont_x-0.1,cont_y]
-            puntos_aux.append(punto)
-            cont_x=0.1
+        if (len(self.__numeros)>0):
 
-            
-        else:
-            punto=[cont_x-0.5,cont_y]
-            puntos_aux.append(punto)
-            punto=[cont_x,cont_y]
-            puntos_aux.append(punto)
+            if (self.__numeros[0]>0):             #Esto es para el primer valor
+                punto=[cont_x-0.5,cont_y]
+                puntos_aux.append(punto)
+                punto=[cont_x-0.1,cont_y]
+                puntos_aux.append(punto)
+                cont_x=0.1
+
+                
+            else:
+                punto=[cont_x-0.5,cont_y]
+                puntos_aux.append(punto)
+                punto=[cont_x,cont_y]
+                puntos_aux.append(punto)
           
         lista.append(1)
         lista2.append(0)       #Mas adelante se podrían juntar en un map o algo así 
@@ -2709,12 +3050,11 @@ class Nudo:
 
 
                         
-            if ( (int((num_analizado-3)/2) ==indice_permutacion) and (numero_par==False)):
-                print('indice_permutacion==x')
+            if ( (int((num_analizado-3)/2) ==indice_permutacion) and (numero_par==False)):      #Esto ocurre unicamente cuando la permutación de números se puede dividir en dos subpermutaciones
                 punto=[cont_x, cont_y]
                 puntos_aux.append(punto)
 
-                for y_aux in y_arriba:              #Esto es para almacenar el valor máximo y minimo de la coordenada y de la raiz anterior, ya que vamos a borrar toda la informacion anterior
+                for y_aux in y_arriba:              #Esto es para almacenar el valor máximo y minimo de la coordenada y de la raiz anterior, ya que vamos a borrar toda la informacion de las listas utilizadas hasta ahora. 
                     if (y_aux>maximo_raiz_antigua):
                         maximo_raiz_antigua=y_aux
 
@@ -2728,7 +3068,7 @@ class Nudo:
                     if (x_cruces>maximo_x):
                         maximo_x=x_cruces
 
-                if arriba: #revisar por si se pudiera hacer más formal 
+                if arriba: 
                     maximo_raiz_antigua+=0.5
                     cont_y=maximo_raiz_antigua
                 
@@ -2751,15 +3091,17 @@ class Nudo:
                 puntos_aux.append(punto)
                 cont_x+=0.5
                 posicion_x_final=cont_x
+
                 if (signo=='Neg'):   #signo negativo
                     punto=[cont_x-0.1, cont_y]
                     puntos_aux.append(punto)
                     cont_x+=0.1
-                    
-                    
+                     
                 else:
                     punto=[cont_x, cont_y]
                     puntos_aux.append(punto)
+
+                '''Eliminamos todas los datos de las listas utilizadas hasta ahora'''
 
                 y_arriba.clear() #Lista que nos indicará la altura de las aristas que pasen por encima del nudo
                 x_arriba.clear() #Lista de listas que nos indicará el valor mínimo y máximo de x para la altura y del vector de arriba    
@@ -2771,12 +3113,12 @@ class Nudo:
                 x_lista_fuera_raiz.clear()
                 raiz_principal=True
                 arriba=True
-                '''Eliminamos todas los datos de las listas utilizadas hasta ahora'''
+                
                 lista2.append(posicion_x_final)
 
 
             else:
-                if(volver==False):  #Si es la PRIMERA VEZ que se llega a un cruce, caso PAR
+                if(volver==False):  #Si es la PRIMERA VEZ que se llega a un cruce. 
                     if (raiz_principal==True): #Esto nos dice que TODAVIA NO hemos tenido que pasar por ningún cruce DOS VECES
                         punto=[cont_x, cont_y]  
                         puntos_aux.append(punto)
@@ -2796,18 +3138,15 @@ class Nudo:
                             
                     else:   #Caso en el que NO estamos en la RAIZ PRINCIPAL pero queremos ANIADIR un NUEVO CRUCE
                         '''Queremos ver en qué sentido tenemos que dibujar el siguiente cruce nuevo posteriormente a haber recorrido un cruce dos veces, que será nuevo ya que ninguno de sus valores está en la lista'''
-                        print('Holaaaaaa par '+ str(cont_y))
-                        print ('x: ' + str(x))
+                        
                         punto=[cont_x, cont_y]
                         puntos_aux.append(punto)
 
-                        aux=False           #Será false hasta que encontremos un cruce de los que quedan que ya haya sido recorrido, tiene que existir ya que no se puede dividir en dos permutaciones ya que sino no hubieramos llegado aquí
+                        aux=False           #Será false hasta que encontremos un cruce de los que quedan que ya haya sido recorrido, tiene que existir ya que no se puede dividir en dos subpermutaciones ya que sino no hubieramos llegado aquí
                         contador_aux=0
 
                         while(aux==False):  #Esto se hace para ver cual es el siguiente cruce que está ya en la lista
-                            contador_aux+=1
-                            #print('contador_aux: ' + str(contador_aux) + ' suma: '+ str(int(contador_aux/2+x)) + ' len: '+ str (len(self.__numeros)))
-                            
+                            contador_aux+=1                            
                             if (numero_par==True):
                                 if (contador_aux%2 ==1):
                                     if (abs(self.__numeros[int(num_analizado/2+(contador_aux-1)/2)]) in lista):
@@ -2825,51 +3164,51 @@ class Nudo:
                             else:
                                 if (contador_aux%2 ==1):
                                     if (num_analizado+contador_aux) in self.__numeros:
-                                        vasoc=2*self.__numeros.index(num_analizado+contador_aux)+1    #Nos devuelve el número impar asociado al número par 2*x+3+contador_aux
-                                        print('vasoc' + str(vasoc))
+                                        vasoc=2*self.__numeros.index(num_analizado+contador_aux)+1 
+                                         
                                         if (vasoc in lista):
                                             aux=True
                                     else:
                                         vasoc=2*self.__numeros.index(-(num_analizado+contador_aux))+1
+                                         
                                         if (vasoc in lista):
                                             aux=True 
                                         
                                 else:
                                     if (abs(self.__numeros[int((num_analizado-1)/2+contador_aux/2)]) in lista ):
-                                        if (abs(self.__numeros[int((num_analizado-1)/2+contador_aux/2)]) not in lista_fuera_raiz):
-                                            aux=True
+                                        #if (abs(self.__numeros[int((num_analizado-1)/2+contador_aux/2)]) not in lista_fuera_raiz):
+                                        aux=True
 
-                    
-                        print('contador_aux: '+ str(contador_aux))
-                        
+                                            
                         if (numero_par==True):
 
                             if ((contador_aux)%2 ==0):  
                                 posicion_relativa_x=lista2[lista.index(vasoc)]
+                                numero_asociado=vasoc
                             else:
                                 posicion_relativa_x=lista2[lista.index(abs(self.__numeros[int(num_analizado/2+(contador_aux-1)/2)]))]
+                                numero_asociado=(abs(self.__numeros[int(num_analizado/2+(contador_aux-1)/2)]))
                         
                         else:
                             if (contador_aux%2 == 1):
                                 posicion_relativa_x=lista2[lista.index(vasoc)]
+                                numero_asociado=vasoc
                             else:
                                 posicion_relativa_x=lista2[lista.index(abs(self.__numeros[int((num_analizado-1)/2 + contador_aux/2)]))]
+                                numero_asociado=abs(self.__numeros[int((num_analizado-1)/2 + contador_aux/2)])
                         posicion_final_x=(cont_x*contador_aux+posicion_relativa_x)/(contador_aux+1)
                         
-                        print('cont_x: '+ str(cont_x))
-                        print('posicion_relativa_x: '+ str(posicion_relativa_x))
-                        print('posicion_final_x: '+ str(posicion_final_x))
 
                         darVuelta=False
-                        if (acabar_aniadir_nuevo_cruce==False):
-                            if arriba:
-                                contador=0
+                        if (acabar_aniadir_nuevo_cruce==False):         #Esto nos dice que no acabamos de aniadir un nuevo cruce, es decir, que acabamos de recorrer un cruce dos veces. 
+                            if (arriba and cont_y >= puntos_aux[len(puntos_aux)-3][1]):
+                                contador=0      #Se utiliza para solo analizar si tenemos que dar la vuelta cuando contengamos las dos coordenadas 'x' de la arista a analizar
                                 for x_aux in x_arriba:
                                     if ((contador % 2)==0):
                                         aux1=x_aux
                                     if ((contador % 2)==1):
                                         if (x_aux > aux1):
-                                            if (cont_x > x_aux or cont_x < aux1): #Es decir, solo daremos la vuelta si estamos fuera de un rango de x_arriba pero la posicion_relativa_x está dentro de ese rango 
+                                            if (cont_x > x_aux or cont_x < aux1): #Es decir, solo daremos la vuelta si actualmente estamos fuera de un rango de x_arriba pero la posicion_relativa_x está dentro de ese rango 
                                                 if (aux1 < posicion_relativa_x and posicion_relativa_x < x_aux):
                                                     darVuelta=True
                                         else:
@@ -2879,7 +3218,7 @@ class Nudo:
                                     contador+=1
                                 
                                 
-                            else:
+                            if (arriba==False and cont_y <= puntos_aux[len(puntos_aux)-3][1]):
                                 contador=0
                                 for x_aux in x_abajo:
                                     if ((contador % 2)==0):
@@ -2895,19 +3234,15 @@ class Nudo:
                                                     darVuelta=True
                                     contador+=1
 
-                            if (darVuelta==True):
-                                print('HEMOS DADO LA VUELTA PAR')
-                            else:
-                                print('NO HEMOS DADO LA VUELTA PAR')
-                                x_lista_fuera_raiz.append(cont_x)
-                                x_lista_fuera_raiz.append(posicion_relativa_x)
-                
+                            
+                                
+                            if(darVuelta==False):
+                                posicion_x_inicial=cont_x
 
 
-                                                    
-                            if (darVuelta==True):
-                                print ('DAR VUELTA: posicion_final_x: '+ str(posicion_final_x))
-                                if arriba:                                  #Queda todavía por hacer el de abajo !!!
+
+                            if (darVuelta==True):               #darVuelta significa que tenemos que dar la vuelta por la parte izquierda del nudo para llegar al siguiente punto 
+                                if arriba:                                  
                                     maximo=0
                                     
                                     for y_ar in y_arriba:                       #Esto se tendría que mejorar y ver si hay un y_arriba que también de la vuelta (pero es complicado que pase)
@@ -2939,13 +3274,12 @@ class Nudo:
                                     x_lista_fuera_raiz.append(cont_x)
                                     x_lista_fuera_raiz.append(posicion_relativa_x)
                                     y_lista_fuera_raiz.append(minimo)
+                                    y_lista_fuera_raiz_altura.append("ab")
                                     punto=[cont_x, cont_y]
                                     puntos_aux.append(punto)
                                     puntos_aux.append(punto)
                                     arriba=False
-                                    
-
-                                    
+                                                 
                                 
                                 else:
                                     minimo=0
@@ -2956,7 +3290,7 @@ class Nudo:
                                     minimo-=0.5
                                     y_abajo.append(minimo)
                                     x_abajo.append(cont_x)
-                                    x_abajo.append(-1)
+                                    x_abajo.append(-1)           #Vamos a hacer el giro en sentido horario
                                     cont_y=minimo
                                     punto=[cont_x, cont_y]
                                     puntos_aux.append(punto)
@@ -2980,6 +3314,7 @@ class Nudo:
                                     x_lista_fuera_raiz.append(cont_x)
                                     x_lista_fuera_raiz.append(posicion_relativa_x)
                                     y_lista_fuera_raiz.append(maximo)
+                                    y_lista_fuera_raiz_altura.append("ar")
                                     punto=[cont_x, cont_y]
                                     puntos_aux.append(punto)
                                     puntos_aux.append(punto)
@@ -2996,6 +3331,7 @@ class Nudo:
 
                         
                             else:           #Caso en el que aniadimos un nuevo cruce pero no hay que dar la vuelta, y previamente no habíamos aniadido un cruce nuevo
+
                                 if (posicion_final_x>cont_x):   #Esto simplemente es para el caso en el que sea un cruce inferior y haya que tener cuidado con el signo de 0.1
                                     sig=1
                                 else:
@@ -3003,62 +3339,136 @@ class Nudo:
 
                                 if not arriba:      #Si nos encontramos en la parte de abajo del nudo 
 
-                                    if not y_abajo: #Es decir, si es la primera vez que vamos a ir para abajo
-                                        y_aux_abajo=-100
-                                        y_aux_arriba=0
-                                        contador=0
-                                        for y_aux in y_lista_fuera_raiz:
-                                            if (y_aux < 0):
-
-                                                if (x_lista_fuera_raiz[2*contador] < x_lista_fuera_raiz[2*contador + 1]):       #Ordenamos las aristas de x_lista_fuera_raiz 
-                                                    valor_mayor=x_lista_fuera_raiz[2*contador + 1]
-                                                    valor_menor=x_lista_fuera_raiz[2*contador]
+                                    if (cont_y <= puntos_aux[len(puntos_aux)-3][1]):        #Si estamos yendo hacia abajo 
+                                        if (( (numero_asociado in lista_fuera_raiz) and (cont_y-0.105 >= y_lista_fuera_raiz[lista_fuera_raiz.index(numero_asociado)] or cont_y+0.105 <= y_lista_fuera_raiz[lista_fuera_raiz.index(numero_asociado)])) and ( (x_lista_fuera_raiz[2*lista_fuera_raiz.index(numero_asociado)]< cont_x and cont_x < x_lista_fuera_raiz[2*lista_fuera_raiz.index(numero_asociado)+1])  or (x_lista_fuera_raiz[2*lista_fuera_raiz.index(numero_asociado)+1]< cont_x and cont_x < x_lista_fuera_raiz[2*lista_fuera_raiz.index(numero_asociado)]))): #9,29
+                                            if (abs(cont_x-posicion_relativa_x) <=0.4):
+                                                
+                                                y_semi_intermedia=(cont_y*3+y_lista_fuera_raiz[lista_fuera_raiz.index(numero_asociado)])/4
+                                                punto=[cont_x, y_semi_intermedia]
+                                                puntos_aux.append(punto)
+                                                puntos_aux.append(punto)
+                                                if (cont_x < posicion_relativa_x):
+                                                    cont_x-=0.4
+                                                    punto=[cont_x, y_semi_intermedia]
+                                                    puntos_aux.append(punto)
+                                                    puntos_aux.append(punto)
+                                                    posicion_x_inicial=cont_x
+                                                    x_abajo.append(cont_x)
+                                                    x_abajo.append(cont_x+0.4)
+                                                    y_lista_fuera_raiz_altura.append("arab")
 
                                                 else:
-                                                    valor_mayor=x_lista_fuera_raiz[2*contador]
-                                                    valor_menor=x_lista_fuera_raiz[2*contador+1]
+                                                    cont_x+=0.4
+                                                    punto=[cont_x, y_semi_intermedia]
+                                                    puntos_aux.append(punto)
+                                                    puntos_aux.append(punto)
+                                                    posicion_x_inicial=cont_x
+                                                    x_abajo.append(cont_x)
+                                                    x_abajo.append(cont_x-0.4)
+                                                    y_lista_fuera_raiz_altura.append("abar")
+                                                y_abajo.append(y_semi_intermedia)
+
                                                 
-                                                print ('valor_menor: ' + str(valor_menor)+ ' valor_mayor: '+ str(valor_mayor)+ ' cont_x: '+ str(cont_x)+ ' posicion_x_final: '+ str(posicion_x_final)+ ' cont_y: '+  str(cont_y)+ ' y_aux: '+ str(y_aux))
-                                                if (cont_y <= y_aux):
-                                                    if ( valor_menor < cont_x and cont_x < valor_mayor  ):
-                                                        if (y_aux < y_aux_arriba):
-                                                            y_aux_arriba=y_aux
-                                                    
-                                                    
-                                                else:
-                                                    if (cont_x > posicion_x_final):
-                                                        if (cont_x > valor_mayor and posicion_x_final < valor_menor):
-                                                            if (y_aux < y_aux_arriba):
-                                                                y_aux_arriba=y_aux
-                                                    
-                                                    else:
-                                                        if (posicion_x_final > valor_mayor and cont_x < valor_menor):
-                                                            if (y_aux < y_aux_arriba):
-                                                                y_aux_arriba=y_aux
+                                                posicion_final_x=(cont_x*contador_aux+posicion_relativa_x)/(contador_aux+1)
 
 
-                                                    if ( valor_menor < cont_x and cont_x < valor_mayor  ):      #Aquí es donde va a entrar casi siempre
-                                                        if (y_aux > y_aux_abajo):
-                                                            y_aux_abajo=y_aux
-                                                
-                                            contador+=1
-                                        print ('y_aux_arriba: '+ str (y_aux_arriba) + ' y_aux_abajo: '+ str(y_aux_abajo))
+                                            y_intermedia=(cont_y+y_lista_fuera_raiz[lista_fuera_raiz.index(numero_asociado)])/2
+                                            cont_y=y_intermedia
+                                            
 
-                                        if (y_aux_arriba==0):
-                                            if (y_aux_abajo==-100):
-                                                cont_y=-1
-                                            else:
-                                                cont_y=y_aux_abajo/2
-
+                                            
                                         else:
-                                            if (y_aux_abajo==-100):
-                                                cont_y=y_aux_arriba - 0.5 
+
+                                            contador=0
+                                                
+                                            y_aux_abajo=-100
+                                            y_aux_arriba=0
+
+                                            for x_aux in x_abajo:
+                                                if ((contador % 2)==0):
+                                                    aux1=x_aux
+                                                if ((contador % 2)==1):
+                                                    if (x_aux>aux1):
+                                                        if (cont_x>aux1 and cont_x < x_aux):
+                                                            if ( y_abajo[int((contador-1)/2)] > y_aux_abajo and y_abajo[int((contador-1)/2)] < cont_y):
+                                                                y_aux_abajo=y_abajo[int((contador-1)/2)]
+                                                    else:
+                                                        if (cont_x>x_aux and cont_x < aux1 ):
+                                                            if ( y_abajo[int((contador-1)/2)] > y_aux_abajo  and y_abajo[int((contador-1)/2)] < cont_y):
+                                                                y_aux_abajo=y_abajo[int((contador-1)/2)]
+                                                            
+                                                    if (cont_x > posicion_relativa_x):
+                                                        if (aux1 > posicion_relativa_x and aux1 < cont_x):
+                                                            if ( y_abajo[int((contador-1)/2)] < y_aux_arriba ):
+                                                                y_aux_arriba=y_abajo[int((contador-1)/2)]
+                                                    else:
+                                                        if (aux1 > cont_x and aux1 < posicion_relativa_x):
+                                                            if ( y_abajo[int((contador-1)/2)] < y_aux_arriba):
+                                                                y_aux_arriba=y_abajo[int((contador-1)/2)]
+
+                                                    
+                                                contador+=1
+                                            
+                                            contador=0
+                                            for y_aux in y_lista_fuera_raiz:
+                                                if (y_aux < 0):
+
+                                                    if (x_lista_fuera_raiz[2*contador] < x_lista_fuera_raiz[2*contador + 1]):       #Ordenamos las aristas de x_lista_fuera_raiz 
+                                                        valor_mayor=x_lista_fuera_raiz[2*contador + 1]
+                                                        valor_menor=x_lista_fuera_raiz[2*contador]
+
+                                                    else:
+                                                        valor_mayor=x_lista_fuera_raiz[2*contador]
+                                                        valor_menor=x_lista_fuera_raiz[2*contador+1]
+                                                    
+                                                    if (cont_y <= y_aux):
+                                                        if ( valor_menor < cont_x and cont_x < valor_mayor  ):
+                                                            if (y_aux < y_aux_arriba):
+                                                                y_aux_arriba=y_aux
+                                                        
+                                                        
+                                                    else:
+                                                        if (cont_x > posicion_relativa_x):
+                                                            if (cont_x > valor_mayor and posicion_relativa_x < valor_mayor):
+                                                                if (y_aux < y_aux_arriba):
+                                                                    y_aux_arriba=y_aux
+                                                        
+                                                        else:
+                                                            if (posicion_relativa_x > valor_mayor and cont_x < valor_mayor):
+                                                                if (y_aux < y_aux_arriba):
+                                                                    y_aux_arriba=y_aux
+                                                        
+
+                                                        if (numero_asociado in lista_fuera_raiz):         #8,15
+                                                            if (y_aux < y_aux_arriba):
+                                                                y_aux_arriba=y_aux
+
+
+                                                        if ( valor_menor < cont_x and cont_x < valor_mayor  ):      #Aquí es donde va a entrar casi siempre
+                                                            if (y_aux > y_aux_abajo  and y_aux < cont_y):
+                                                                y_aux_abajo=y_aux
+                                                    
+                                                contador+=1
+
+
+                                            y_lista_fuera_raiz_altura.append("ab")
+
+                                            if (y_aux_arriba==0):
+                                                if (y_aux_abajo==-100):
+                                                    cont_y=-1
+                                                else:
+                                                    cont_y=y_aux_abajo/2
+
                                             else:
-                                                cont_y= (y_aux_arriba + y_aux_abajo)/2 #Dividimos entre dos para asegurarnos de que no sea negativo 
+                                                if (y_aux_abajo==-100):
+                                                    cont_y=y_aux_arriba - 0.5  
+                                                else:
+                                                    cont_y= (y_aux_arriba + y_aux_abajo)/2  #Dividimos entre dos para asegurarnos de que no sea negativo
+
                                     else:
                                         contador=0
                                             
-                                        y_aux_abajo=-100
+                                        
                                         y_aux_arriba=0
 
                                         for x_aux in x_abajo:
@@ -3066,86 +3476,22 @@ class Nudo:
                                                 aux1=x_aux
                                             if ((contador % 2)==1):
                                                 if (x_aux>aux1):
-                                                    print ('cont_x: '+ str(cont_x) + ' aux1: '+ str(aux1) + ' x_aux: '+ str(x_aux))
-                                                    if (cont_x>aux1 and cont_x < x_aux ):
-                                                        if ( y_abajo[int((contador-1)/2)] > y_aux_abajo):
-                                                            y_aux_abajo=y_abajo[int((contador-1)/2)]
+                                                    if (cont_x>aux1 and cont_x < x_aux):
+                                                        if ( y_abajo[int((contador-1)/2)] < y_aux_arriba and y_abajo[int((contador-1)/2)] > cont_y):
+                                                            y_aux_arriba=y_abajo[int((contador-1)/2)]
                                                 else:
-                                                    print ('cont_x: '+ str(cont_x)  + ' x_aux: '+ str(x_aux)+ ' aux1: '+ str(aux1))
                                                     if (cont_x>x_aux and cont_x < aux1 ):
-                                                        if ( y_abajo[int((contador-1)/2)] > y_aux_abajo):
-                                                            y_aux_abajo=y_abajo[int((contador-1)/2)]
+                                                        if ( y_abajo[int((contador-1)/2)] < y_aux_arriba and y_abajo[int((contador-1)/2)] > cont_y):
+                                                            y_aux_arriba=y_abajo[int((contador-1)/2)]
                                                         
-                                                if (cont_x > posicion_x_final):
-                                                    if (aux1 > posicion_x_final and aux1 < cont_x):
-                                                        if ( y_abajo[int((contador-1)/2)] < y_aux_arriba):
-                                                            y_aux_arriba=y_abajo[int((contador-1)/2)]
-                                                else:
-                                                    if (aux1 > cont_x and aux1 < posicion_x_final):
-                                                        if ( y_abajo[int((contador-1)/2)] < y_aux_arriba):
-                                                            y_aux_arriba=y_abajo[int((contador-1)/2)]
 
                                                 
                                             contador+=1
-                                        
-                                        contador=0
-                                        for y_aux in y_lista_fuera_raiz:
-                                            if (y_aux < 0):
-
-                                                if (x_lista_fuera_raiz[2*contador] < x_lista_fuera_raiz[2*contador + 1]):       #Ordenamos las aristas de x_lista_fuera_raiz 
-                                                    valor_mayor=x_lista_fuera_raiz[2*contador + 1]
-                                                    valor_menor=x_lista_fuera_raiz[2*contador]
-
-                                                else:
-                                                    valor_mayor=x_lista_fuera_raiz[2*contador]
-                                                    valor_menor=x_lista_fuera_raiz[2*contador+1]
-                                                
-                                                print ('valor_menor: ' + str(valor_menor)+ ' valor_mayor: '+ str(valor_mayor)+ ' cont_x: '+ str(cont_x)+ ' posicion_x_final: '+ str(posicion_x_final)+ ' cont_y: '+  str(cont_y)+ ' y_aux: '+ str(y_aux))
-                                                if (cont_y <= y_aux):
-                                                    if ( valor_menor < cont_x and cont_x < valor_mayor  ):
-                                                        if (y_aux < y_aux_arriba):
-                                                            y_aux_arriba=y_aux
-                                                    
-                                                    
-                                                else:
-                                                    if (cont_x > posicion_x_final):
-                                                        if (cont_x > valor_mayor and posicion_x_final < valor_menor):
-                                                            if (y_aux < y_aux_arriba):
-                                                                y_aux_arriba=y_aux
-                                                    
-                                                    else:
-                                                        if (posicion_x_final > valor_mayor and cont_x < valor_menor):
-                                                            if (y_aux < y_aux_arriba):
-                                                                y_aux_arriba=y_aux
-
-
-                                                    if ( valor_menor < cont_x and cont_x < valor_mayor  ):      #Aquí es donde va a entrar casi siempre
-                                                        if (y_aux > y_aux_abajo):
-                                                            y_aux_abajo=y_aux
-                                                
-                                            contador+=1
-                                        
-
-                                        print ('y_aux_arriba: ' + str (y_aux_arriba))
-                                        print ('y_aux_abajo: '+ str(y_aux_abajo))
-
-
-
-                                        if (y_aux_arriba==0):
-                                            if (y_aux_abajo==-100):
-                                                cont_y=-1
-                                            else:
-                                                cont_y=y_aux_abajo/2
-
-                                        else:
-                                            if (y_aux_abajo==-100):
-                                                cont_y=y_aux_arriba - 0.5  
-                                            else:
-                                                cont_y= (y_aux_arriba + y_aux_abajo)/2  #Dividimos entre dos para asegurarnos de que no sea negativo
-
-                                            
+                                    
+                                        cont_y=(y_aux_arriba+ cont_y)/2
+                                        y_lista_fuera_raiz_altura.append("ar")
                                 
-                                else: #Aquí no se puede dar el caso de que no exista y_arriba
+                                else: #En el caso de que estemos arriba
                                     contador=0
                                     cont_y=1
 
@@ -3165,39 +3511,39 @@ class Nudo:
                                                     if ( y_arriba[int((contador-1)/2)] < y_aux_arriba):
                                                         y_aux_arriba=y_arriba[int((contador-1)/2)]
                                                     
-                                            if (cont_x > posicion_x_final):
-                                                if (aux1 > posicion_x_final and aux1 < cont_x):
+                                            if (cont_x > posicion_relativa_x):
+                                                if (aux1 > posicion_relativa_x and aux1 < cont_x):
                                                     if ( y_arriba[int((contador-1)/2)] > y_aux_abajo):
                                                         y_aux_abajo=y_arriba[int((contador-1)/2)]
                                             else:
-                                                if (aux1 > cont_x and aux1 < posicion_x_final):
+                                                if (aux1 > cont_x and aux1 < posicion_relativa_x):
                                                     if ( y_arriba[int((contador-1)/2)] > y_aux_abajo):
                                                         y_aux_abajo=y_arriba[int((contador-1)/2)]
             
                                         contador+=1
 
-                                        contador=0
-                                        for y_aux in y_lista_fuera_raiz:
-                                            if (y_aux > 0):
-                                                if (cont_y >= y_aux):
-                                                    if (x_lista_fuera_raiz[2*contador] < x_lista_fuera_raiz[2*contador + 1]):
-                                                        if ( x_lista_fuera_raiz[2*contador] < cont_x and cont_x < x_lista_fuera_raiz[2*contador + 1]  ):
-                                                            if (y_aux > y_aux_abajo):
-                                                                y_aux_abajo=y_aux
-                                                    else:
-                                                        if ( x_lista_fuera_raiz[2*contador] > cont_x and cont_x > x_lista_fuera_raiz[2*contador + 1]  ):
-                                                            if (y_aux > y_aux_abajo):
-                                                                y_aux_abajo=y_aux
+                                    contador=0
+                                    for y_aux in y_lista_fuera_raiz:
+                                        if (y_aux > 0):
+                                            if (cont_y >= y_aux):
+                                                if (x_lista_fuera_raiz[2*contador] < x_lista_fuera_raiz[2*contador + 1]):
+                                                    if ( x_lista_fuera_raiz[2*contador] < cont_x and cont_x < x_lista_fuera_raiz[2*contador + 1]  ):
+                                                        if (y_aux > y_aux_abajo):
+                                                            y_aux_abajo=y_aux
                                                 else:
-                                                    if (x_lista_fuera_raiz[2*contador] < x_lista_fuera_raiz[2*contador + 1]):
-                                                        if ( x_lista_fuera_raiz[2*contador] < cont_x and cont_x < x_lista_fuera_raiz[2*contador + 1]  ):
-                                                            if (y_aux < y_aux_arriba):
-                                                                y_aux_arriba=y_aux
-                                                    else:
-                                                        if ( x_lista_fuera_raiz[2*contador] > cont_x and cont_x > x_lista_fuera_raiz[2*contador + 1]  ):
-                                                            if (y_aux < y_aux_arriba):
-                                                                y_aux_arriba=y_aux
-                                            contador+=1
+                                                    if ( x_lista_fuera_raiz[2*contador] > cont_x and cont_x > x_lista_fuera_raiz[2*contador + 1]  ):
+                                                        if (y_aux > y_aux_abajo):
+                                                            y_aux_abajo=y_aux
+                                            else:
+                                                if (x_lista_fuera_raiz[2*contador] < x_lista_fuera_raiz[2*contador + 1]):
+                                                    if ( x_lista_fuera_raiz[2*contador] < cont_x and cont_x < x_lista_fuera_raiz[2*contador + 1]  ):
+                                                        if (y_aux < y_aux_arriba):
+                                                            y_aux_arriba=y_aux
+                                                else:
+                                                    if ( x_lista_fuera_raiz[2*contador] > cont_x and cont_x > x_lista_fuera_raiz[2*contador + 1]  ):
+                                                        if (y_aux < y_aux_arriba):
+                                                            y_aux_arriba=y_aux
+                                        contador+=1
                                     
                                     if (y_aux_arriba==100):
                                         if (y_aux_abajo==0):
@@ -3210,9 +3556,10 @@ class Nudo:
                                             cont_y=y_aux_arriba/2 #Dividimos entre dos para asegurarnos de que no sea negativo 
                                         else:
                                             cont_y= (y_aux_arriba + y_aux_abajo)/2
+                                    
+                                    y_lista_fuera_raiz_altura.append("ar")
                                 
                                 if (signo=='Neg'): #cruce_inferior, llegamos hasta posicion_final_x-0.1 o +0.1
-                                    print('Hola impar inferior')
                                     punto=[cont_x, cont_y]
                                     puntos_aux.append(punto)
                                     puntos_aux.append(punto)
@@ -3221,7 +3568,6 @@ class Nudo:
                                     punto=[posicion_final_x+sig*0.1, cont_y]
                                     cont_x=posicion_final_x+sig*0.1
                                 else:
-                                    print('Hola impar superior')
                                     punto=[cont_x, cont_y]
                                     puntos_aux.append(punto)
                                     puntos_aux.append(punto)
@@ -3229,12 +3575,18 @@ class Nudo:
                                     puntos_aux.append(punto)
                                     cont_x=posicion_final_x
 
+                                x_lista_fuera_raiz.append(posicion_x_inicial)
+                                x_lista_fuera_raiz.append(posicion_relativa_x)
                                 y_lista_fuera_raiz.append(cont_y)
 
                         else:       #Caso en el que justo acabábamos de aniadir un cruce nuevo y vamos a aniadir otro
-                            x_lista_fuera_raiz.append(cont_x)
+                            
+                            x_lista_fuera_raiz.append(x_lista_fuera_raiz[len(x_lista_fuera_raiz) -2])
+                            #x_lista_fuera_raiz.append(cont_x)
                             x_lista_fuera_raiz.append(posicion_relativa_x)
                             y_lista_fuera_raiz.append(cont_y)
+                            y_lista_fuera_raiz_altura.append(y_lista_fuera_raiz_altura[len(y_lista_fuera_raiz_altura)-1])
+
                             if (posicion_final_x>cont_x):   #Esto simplemente es para el caso en el que sea un cruce inferior y haya que tener cuidado con el signo de 0.1
                                 sig=1
                             else:
@@ -3257,26 +3609,21 @@ class Nudo:
                     
                 else:               #Si es la segunda vez que lo vamos a recorrer, es decir si Volver==TRUE
                     
-                    if (raiz_principal==True):
+                    if (raiz_principal==True):      #Si todavía no hemos recorrido ningún cruce cos veces, y por tanto seguimos en la raiz principal 
                         punto=[cont_x, cont_y]
                         puntos_aux.append(punto)
                         punto=[lista2[len(lista2)-1]+0.5, cont_y]
+                        x_maximo=lista2[len(lista2)-1]+0.5
                         puntos_aux.append(punto)
                         raiz_principal=False   #Esta variable sirve para en caso de que volvamos y luego haya un cruce nuevo saber hacia donde nos debemos de mover en el eje x 
-                    
-                    
-                    print ('Cruce ' + str(num_analizado) + ' Valor asociado: '+str(valor_asociado))    
+                     
                     posicion_x_final=lista2[lista.index(valor_asociado)]
-                    print('posicion_x_inicial: ' + str(cont_x))
-                    print('posicion_x_final: ' + str(posicion_x_final))
 
-
-
-                    if (acabar_aniadir_nuevo_cruce==True):
+                    if (acabar_aniadir_nuevo_cruce==True):  #Si acababamos de añadir un nuevo cruce, cambiamos dicha variable a False ya que vamos a pasar dos veces por el mismo cruce 
                         
                         acabar_aniadir_nuevo_cruce=False
-                        if(arriba==True):
-                            print('acabar_aniadir_cruce_par_arriba')
+
+                        if(arriba==True):           
                             
                             punto=[cont_x, cont_y]
                             puntos_aux.append(punto)
@@ -3284,6 +3631,7 @@ class Nudo:
                             punto=[cont_x, cont_y]
                             puntos_aux.append(punto)
                             puntos_aux.append(punto)
+
                             if valor_asociado in lista_fuera_raiz:
                                 if (signo=='Neg'):
                                     if (puntos_aux[len(puntos_aux)-2][1] < y_lista_fuera_raiz[lista_fuera_raiz.index(valor_asociado)]):         #Es decir, si estamos yendo para arriba 
@@ -3313,7 +3661,7 @@ class Nudo:
                                 arriba=False
 
                         else:
-                            print('acabar_aniadir_cruce_par_abajo')
+
                             punto=[cont_x, cont_y]
                             puntos_aux.append(punto)
                             cont_x=posicion_x_final
@@ -3352,44 +3700,74 @@ class Nudo:
                                     cont_y=0.1
                                 arriba=True
                     
-                    else:
+                    else:                                               #Volver==True and acabar_aniadir_nuevo_cruce==False
                         if valor_asociado in lista_fuera_raiz:                  #Es decir, si vamos a recorrer de nuevo un cruce que no está en la  'raiz principal'
-                            print ('valor_asociado in lista_fuera_raiz_par')
                             punto=[cont_x, cont_y] 
                             puntos_aux.append(punto)
                             
                             indice=lista_fuera_raiz.index(valor_asociado)
                             estar_dentro=False
+
                             if (x_lista_fuera_raiz[2*indice]<x_lista_fuera_raiz[2*indice + 1]):
-                                print ('x_lista_fuera_raiz[2*indice]: '+ str(x_lista_fuera_raiz[2*indice]) + ' x_lista_fuera_raiz[2*indice+1]: '+ str(x_lista_fuera_raiz[2*indice + 1]))
-                                if (cont_x >= (x_lista_fuera_raiz[2*indice] -0.1) and cont_x <= (x_lista_fuera_raiz[2*indice + 1]+0.1)):
-                                    estar_dentro=True
+                                if (cont_x >= (x_lista_fuera_raiz[2*indice] -0.101) and cont_x <= (x_lista_fuera_raiz[2*indice + 1]+0.101)):
+                                    estar_dentro=True           #Esto significa que nos encontramos 'encerrados por esa arista' por donde tenemos que pasar, ya que está el cruce por el que tenemos que volver a pasar 
                             else:
-                                print ('x_lista_fuera_raiz[2*indice]: '+ str(x_lista_fuera_raiz[2*indice]) + ' x_lista_fuera_raiz[2*indice+1]: '+ str(x_lista_fuera_raiz[2*indice + 1]))
-                                if (cont_x <= (x_lista_fuera_raiz[2*indice]+0.1) and cont_x >= (x_lista_fuera_raiz[2*indice + 1]-0.1)):
+                                if (cont_x <= (x_lista_fuera_raiz[2*indice]+0.101) and cont_x >= (x_lista_fuera_raiz[2*indice + 1]-0.101)):
                                     estar_dentro=True
                             
-                            if (arriba):
-                                print('arriba')
-                            else:
-                                print('abajo')
 
                             if (estar_dentro==True):
-                                print('estar_dentro')
-
                                 if (cont_y-0.1 <= y_lista_fuera_raiz[lista_fuera_raiz.index(valor_asociado)] and cont_y+0.1 >= y_lista_fuera_raiz[lista_fuera_raiz.index(valor_asociado)] ):
-                                    misma_rama=True                
-                                    print('misma_rama')
+                                    misma_rama=True     #misma_rama quiere decir que el cruce en el que nos encontramos ahora y al que queremos ir se encuntran en la misma 'arista_grande', que la llamremos rama, es decir, que tienen la misma coordenada 'x'
+
                                 else:
                                     misma_rama=False
-                                    print('no_misma_rama')
-                                
+
+
                                 if (misma_rama==True):
-                                    print('Llega1')
                                     if (not arriba):        #Si estamos abajo 
-                                        print('Llega2')
-                                        if (puntos_aux[len(puntos_aux)-2][1] > cont_y):    #Si estamos yendo en dirección vertical hacia abajo 
-                                            y_intermedia= y_lista_fuera_raiz[indice]-0.5
+                                        if (puntos_aux[len(puntos_aux)-3][1] > cont_y):    #Si estamos yendo en dirección vertical hacia abajo 
+                                            
+                                            contador=0
+                                            y_aux_abajo=-100
+                                            for x_aux in x_abajo:
+                                                if ((contador % 2)==0):
+                                                    aux1=x_aux
+                                                if ((contador % 2)==1):
+                                                    if (x_aux>aux1):
+                                                        if (cont_x>aux1 and cont_x < x_aux ):
+                                                            if (cont_y > y_abajo[int((contador-1)/2)]):
+                                                                if ( y_abajo[int((contador-1)/2)] > y_aux_abajo):
+                                                                    y_aux_abajo=y_abajo[int((contador-1)/2)]
+                                                    else:
+                                                        if (cont_x>x_aux and cont_x < aux1 ):
+                                                            if (cont_y > y_abajo[int((contador-1)/2)]):
+                                                                if ( y_abajo[int((contador-1)/2)] > y_aux_abajo):
+                                                                    y_aux_abajo=y_abajo[int((contador-1)/2)]
+                                                        
+                                                contador+=1
+                                            
+                                            contador=0
+                                            for y_aux in y_lista_fuera_raiz:
+                                                if (y_aux < 0):
+                                                    if (cont_y > y_aux):
+                                                        if (x_lista_fuera_raiz[2*contador] < x_lista_fuera_raiz[2*contador + 1]):
+                                                            if ( x_lista_fuera_raiz[2*contador] < cont_x and cont_x < x_lista_fuera_raiz[2*contador + 1]  ):
+                                                                if (y_aux > y_aux_abajo):
+                                                                    y_aux_abajo=y_aux
+
+                                                        else:
+                                                            if ( x_lista_fuera_raiz[2*contador] > cont_x and cont_x > x_lista_fuera_raiz[2*contador + 1]  ):
+                                                                if (y_aux > y_aux_abajo):
+                                                                    y_aux_abajo=y_aux
+                                                contador+=1
+                                            
+                                            if (y_aux_abajo==-100):
+                                                 y_intermedia= y_lista_fuera_raiz[indice]-0.5
+                                            else:
+                                                y_intermedia= ( y_lista_fuera_raiz[indice]+y_aux_abajo)/2
+                                            
+                                           
                                             punto=[cont_x, y_intermedia]
                                             puntos_aux.append(punto)
                                             puntos_aux.append(punto)
@@ -3413,33 +3791,89 @@ class Nudo:
                                         
                                         else:                                           #Si estamos yendo en dirección vertical hacia arriba 
                                             contador=0
-                                    
+                                            
                                             y_aux_abajo=-100
                                             y_aux_arriba=0
 
-                                            for x_aux in x_abajo:
+                                            for x_aux in x_abajo:                       #Vemos con que otras aristas verticales puede intersectar, y tratamos de evitarlas 
                                                 if ((contador % 2)==0):
                                                     aux1=x_aux
                                                 if ((contador % 2)==1):
                                                     if (x_aux>aux1):
-                                                        print ('cont_x: '+ str(cont_x) + ' aux1: '+ str(aux1) + ' x_aux: '+ str(x_aux))
                                                         if (cont_x>aux1 and cont_x < x_aux ):
-                                                            if ( y_abajo[int((contador-1)/2)] > y_aux_abajo):
-                                                                y_aux_abajo=y_abajo[int((contador-1)/2)]
-                                                    else:
-                                                        print ('cont_x: '+ str(cont_x)  + ' x_aux: '+ str(x_aux)+ ' aux1: '+ str(aux1))
-                                                        if (cont_x>x_aux and cont_x < aux1 ):
-                                                            if ( y_abajo[int((contador-1)/2)] > y_aux_abajo):
-                                                                y_aux_abajo=y_abajo[int((contador-1)/2)]
+                                                            if (y_abajo[int((contador-1)/2)] < cont_y):
+                                                                if ( y_abajo[int((contador-1)/2)] > y_aux_abajo):
+                                                                    y_aux_abajo=y_abajo[int((contador-1)/2)]
+                                                            else:
+                                                                if ( y_abajo[int((contador-1)/2)] < y_aux_arriba):
+                                                                    y_aux_arriba=y_abajo[int((contador-1)/2)]
+
+                                                        
+                                                        if (cont_x > posicion_x_final):
+                                                            if (aux1 < posicion_x_final and x_aux > cont_x):
+                                                                if (y_abajo[int((contador-1)/2)] > cont_y):
+                                                                    if ( y_abajo[int((contador-1)/2)] < y_aux_arriba):
+                                                                        y_aux_arriba=y_abajo[int((contador-1)/2)]
+
+                                                            if (posicion_x_final < aux1 and cont_x > x_aux):                    #Ejemplo 8, 11
+                                                                if (y_abajo[int((contador-1)/2)] > cont_y and (( (lista2.index(aux1)+1) in lista_fuera_raiz) and ((lista2.index(x_aux)+1) in lista_fuera_raiz))):
+                                                                    if ( y_abajo[int((contador-1)/2)] > y_aux_abajo):
+                                                                        y_aux_abajo=y_abajo[int((contador-1)/2)]
+
+                                                        else:
+                                                            if (aux1 < cont_x and x_aux > posicion_x_final):
+                                                                if (y_abajo[int((contador-1)/2)] > cont_y):
+                                                                    if ( y_abajo[int((contador-1)/2)] < y_aux_arriba):
+                                                                        y_aux_arriba=y_abajo[int((contador-1)/2)]
                                                             
-                                                    if (cont_x > posicion_x_final):
-                                                        if (aux1 > posicion_x_final and aux1 < cont_x):
+                                                            if (cont_x < aux1 and posicion_x_final > x_aux):         
+                                                                if (y_abajo[int((contador-1)/2)] > cont_y and(( (lista2.index(aux1)+1) in lista_fuera_raiz) and ((lista2.index(x_aux)+1) in lista_fuera_raiz))):
+                                                                    if ( y_abajo[int((contador-1)/2)] > y_aux_abajo):
+                                                                        y_aux_abajo=y_abajo[int((contador-1)/2)]
+
+                                                    else:
+                                                        if (cont_x>x_aux and cont_x < aux1 ):
+                                                            if (y_abajo[int((contador-1)/2)] < cont_y):
+                                                                if ( y_abajo[int((contador-1)/2)] > y_aux_abajo):
+                                                                    y_aux_abajo=y_abajo[int((contador-1)/2)]
+                                                            else:
+                                                                if ( y_abajo[int((contador-1)/2)] < y_aux_arriba):
+                                                                    y_aux_arriba=y_abajo[int((contador-1)/2)]
+                                                        
+                                                        if (cont_x > posicion_x_final):
+                                                            if (x_aux < posicion_x_final and aux1 > cont_x):
+                                                                if (y_abajo[int((contador-1)/2)] > cont_y):
+                                                                    if ( y_abajo[int((contador-1)/2)] < y_aux_arriba):
+                                                                        y_aux_arriba=y_abajo[int((contador-1)/2)]
+                                                            
+                                                            if (posicion_x_final < x_aux and cont_x > aux1):                    #Ejemplo 8, 11
+                                                                if (y_abajo[int((contador-1)/2)] > cont_y and (( (lista2.index(aux1)+1) in lista_fuera_raiz) and ((lista2.index(x_aux)+1) in lista_fuera_raiz))):
+                                                                    if ( y_abajo[int((contador-1)/2)] > y_aux_abajo):
+                                                                        y_aux_abajo=y_abajo[int((contador-1)/2)]
+
+                                                        else:
+                                                            if (x_aux < cont_x and aux1 > posicion_x_final):
+                                                                if (y_abajo[int((contador-1)/2)] > cont_y):
+                                                                    if ( y_abajo[int((contador-1)/2)] < y_aux_arriba):
+                                                                        y_aux_arriba=y_abajo[int((contador-1)/2)]
+
+                                                            if (cont_x < x_aux and posicion_x_final > aux1):                  
+                                                                if (y_abajo[int((contador-1)/2)] > cont_y and (( (lista2.index(aux1)+1) in lista_fuera_raiz) and ((lista2.index(x_aux)+1) in lista_fuera_raiz))):
+                                                                    if ( y_abajo[int((contador-1)/2)] > y_aux_abajo):
+                                                                        y_aux_abajo=y_abajo[int((contador-1)/2)]
+                                                        
+
+                                                            
+                                                    
+                                                    if (aux1 > posicion_x_final and aux1 < cont_x):
+                                                        if (y_abajo[int((contador-1)/2)] > cont_y and (( (lista2.index(aux1)+1) not in lista_fuera_raiz) or ((lista2.index(x_aux)+1) not in lista_fuera_raiz))):
                                                             if ( y_abajo[int((contador-1)/2)] < y_aux_arriba):
                                                                 y_aux_arriba=y_abajo[int((contador-1)/2)]
                                                     else:
                                                         if (aux1 > cont_x and aux1 < posicion_x_final):
-                                                            if ( y_abajo[int((contador-1)/2)] < y_aux_arriba):
-                                                                y_aux_arriba=y_abajo[int((contador-1)/2)]
+                                                            if (y_abajo[int((contador-1)/2)] > cont_y and (( (lista2.index(aux1)+1) not in lista_fuera_raiz) or ((lista2.index(x_aux)+1) not in lista_fuera_raiz))):
+                                                                if ( y_abajo[int((contador-1)/2)] < y_aux_arriba):
+                                                                    y_aux_arriba=y_abajo[int((contador-1)/2)]
 
                                                     
                                                 contador+=1
@@ -3469,18 +3903,57 @@ class Nudo:
                                             contador=0
                                             for y_aux in y_lista_intermedia:
                                                 if (y_aux < 0 and y_aux > cont_y):
-                                                    if (cont_x>posicion_x_final):
-                                                        if (posicion_x_final <= x_arriba_lista_intermedia[contador] and x_arriba_lista_intermedia[contador] <= cont_x):
-                                                            if (y_aux < y_aux_arriba):
-                                                                y_aux_arriba=y_aux
-                                                    else:
-                                                        if (cont_x <= x_arriba_lista_intermedia[contador] and x_arriba_lista_intermedia[contador] <= posicion_x_final):
-                                                            if (y_aux < y_aux_arriba):
+                                                    if (cont_x<posicion_x_final):
+                                                        if ( x_abajo_lista_intermedia[contador] < x_arriba_lista_intermedia[contador]):
+                                                            if (cont_x >= x_abajo_lista_intermedia[contador] and cont_x <= x_arriba_lista_intermedia[contador]):
+                                                                if (y_aux < y_aux_arriba):
                                                                     y_aux_arriba=y_aux
+                                                        else:
+                                                            if (posicion_x_final >= x_arriba_lista_intermedia[contador] and posicion_x_final <=x_abajo_lista_intermedia[contador]):
+                                                                if (y_aux < y_aux_arriba):
+                                                                    y_aux_arriba=y_aux
+                                                    else:
+                                                        if ( x_abajo_lista_intermedia[contador] < x_arriba_lista_intermedia[contador]):
+                                                            if (posicion_x_final >= x_abajo_lista_intermedia[contador] and posicion_x_final <= x_arriba_lista_intermedia[contador]):
+                                                                if (y_aux < y_aux_arriba):
+                                                                    y_aux_arriba=y_aux
+                                                        else:
+                                                            if (cont_x >= x_arriba_lista_intermedia[contador] and cont_x <=x_abajo_lista_intermedia[contador]):
+                                                                if (y_aux < y_aux_arriba):
+                                                                    y_aux_arriba=y_aux
+                                                    
+                                                    if (x_lista_fuera_raiz[2*lista_fuera_raiz.index(valor_asociado)] < x_lista_fuera_raiz[2*lista_fuera_raiz.index(valor_asociado)+1]):     #Esto se hace para casos como el del 8,11
+                                                        if ( x_abajo_lista_intermedia[contador] < x_arriba_lista_intermedia[contador]):
+                                                            if ( (x_lista_fuera_raiz[2*lista_fuera_raiz.index(valor_asociado)] < x_abajo_lista_intermedia[contador]) and (x_arriba_lista_intermedia[contador] < x_lista_fuera_raiz[2*lista_fuera_raiz.index(valor_asociado)+1])):
+                                                                if (y_aux < y_aux_arriba):
+                                                                    y_aux_arriba=y_aux
+                                                        else:
+                                                            if ( (x_lista_fuera_raiz[2*lista_fuera_raiz.index(valor_asociado)] < x_arriba_lista_intermedia[contador]) and (x_abajo_lista_intermedia[contador] < x_lista_fuera_raiz[2*lista_fuera_raiz.index(valor_asociado)+1])):
+                                                                if (y_aux < y_aux_arriba):
+                                                                    y_aux_arriba=y_aux
+                                                    
+                                                    else:
+                                                        if ( x_abajo_lista_intermedia[contador] < x_arriba_lista_intermedia[contador]):
+                                                            if ( (x_lista_fuera_raiz[2*lista_fuera_raiz.index(valor_asociado)+1] < x_abajo_lista_intermedia[contador]) and (x_arriba_lista_intermedia[contador] < x_lista_fuera_raiz[2*lista_fuera_raiz.index(valor_asociado)])):
+                                                                if (y_aux < y_aux_arriba):
+                                                                    y_aux_arriba=y_aux
+                                                        else:
+                                                            if ( (x_lista_fuera_raiz[2*lista_fuera_raiz.index(valor_asociado)+1] < x_arriba_lista_intermedia[contador]) and (x_abajo_lista_intermedia[contador] < x_lista_fuera_raiz[2*lista_fuera_raiz.index(valor_asociado)])):
+                                                                if (y_aux < y_aux_arriba):
+                                                                    y_aux_arriba=y_aux
+
                                                 contador+=1
                                             
-
-                                            y_intermedia=(cont_y+y_aux_arriba)/2
+                                            if (y_aux_abajo==-100):
+                                                y_intermedia=(cont_y+y_aux_arriba)/2
+                                            else:
+                                                if (y_aux_abajo > cont_y):
+                                                    if (y_aux_abajo-0.05 < y_aux_arriba and y_aux_abajo+0.05 > y_aux_arriba):
+                                                        y_intermedia=y_aux_abajo+0.1
+                                                    else:
+                                                        y_intermedia=(y_aux_arriba+y_aux_abajo)/2
+                                                else:
+                                                    y_intermedia=(y_aux_arriba+cont_y)/2
                                             punto=[cont_x, y_intermedia]
                                             puntos_aux.append(punto)
                                             puntos_aux.append(punto)
@@ -3505,9 +3978,48 @@ class Nudo:
 
                                     
                                     else:
-                                        print('Llega3')
-                                        if (puntos_aux[len(puntos_aux)-2][1] < cont_y):
-                                            y_intermedia= y_lista_fuera_raiz[indice]+0.5
+                                        if (puntos_aux[len(puntos_aux)-3][1] < cont_y):     #Si estamos yendo en dirección vertical hacia arriba
+
+                                            contador=0
+                                            y_aux_arriba=100
+
+                                            for x_aux in x_arriba:
+                                                if ((contador % 2)==0):
+                                                    aux1=x_aux
+                                                if ((contador % 2)==1):
+                                                    if (x_aux>aux1):
+                                                        if (cont_x>aux1 and cont_x < x_aux ):
+                                                            if (cont_y < y_arriba[int((contador-1)/2)]):
+                                                                if ( y_arriba[int((contador-1)/2)] < y_aux_arriba):
+                                                                    y_aux_arriba=y_arriba[int((contador-1)/2)]
+                                                    else:
+                                                        if (cont_x>x_aux and cont_x < aux1 ):
+                                                            if (cont_y < y_arriba[int((contador-1)/2)]):
+                                                                if ( y_arriba[int((contador-1)/2)] < y_aux_arriba):
+                                                                    y_aux_arriba=y_arriba[int((contador-1)/2)]
+                                                contador+=1
+                                            
+
+                                            contador=0
+                                            for y_aux in y_lista_fuera_raiz:
+                                                if (y_aux > 0):
+                                                    if (cont_y < y_aux):
+                                                        if (x_lista_fuera_raiz[2*contador] < x_lista_fuera_raiz[2*contador + 1]):
+                                                            if ( x_lista_fuera_raiz[2*contador] < cont_x and cont_x < x_lista_fuera_raiz[2*contador + 1]  ):
+                                                                if (y_aux < y_aux_arriba):
+                                                                    y_aux_arriba=y_aux
+
+                                                        else:
+                                                            if ( x_lista_fuera_raiz[2*contador] > cont_x and cont_x > x_lista_fuera_raiz[2*contador + 1]  ):
+                                                                if (y_aux < y_aux_arriba):
+                                                                    y_aux_arriba=y_aux
+                                                contador+=1
+
+                                            if (y_aux_arriba==100):
+                                                y_intermedia= y_lista_fuera_raiz[indice]+0.5
+                                            else:
+                                                y_intermedia=(y_aux_arriba+y_lista_fuera_raiz[indice])/2
+
                                             punto=[cont_x, y_intermedia]
                                             puntos_aux.append(punto)
                                             puntos_aux.append(punto)
@@ -3520,6 +4032,7 @@ class Nudo:
                                             punto=[cont_x, y_intermedia]
                                             puntos_aux.append(punto)
                                             puntos_aux.append(punto)
+
                                             if (signo=='Pos'):
                                                 y_lista_fuera_raiz[lista_fuera_raiz.index(valor_asociado)]
                                                 punto=[cont_x, cont_y]
@@ -3529,7 +4042,7 @@ class Nudo:
                                                 puntos_aux.append(punto)
                                                 cont_y=y_lista_fuera_raiz[lista_fuera_raiz.index(valor_asociado)]-0.1
                                         
-                                        else: 
+                                        else:                                               #Si estamos yendo en dirección vertical hacia abajo 
                                             contador=0
                                             punto=[cont_x, cont_y]
                                             puntos_aux.append(punto)
@@ -3544,21 +4057,49 @@ class Nudo:
                                                 if ((contador % 2)==1):
                                                     if (x_aux>aux1):
                                                         if (cont_x>aux1 and cont_x < x_aux ):
-                                                            if ( y_arriba[int((contador-1)/2)] < y_aux_arriba):
-                                                                y_aux_arriba=y_arriba[int((contador-1)/2)]
+                                                            if (y_arriba[int((contador-1)/2)]  > cont_y):
+                                                                if ( y_arriba[int((contador-1)/2)] < y_aux_arriba):
+                                                                    y_aux_arriba=y_arriba[int((contador-1)/2)]
+
+                                                        if (cont_x > posicion_x_final):
+                                                            if (aux_1 < posicion_x_final and x_aux > cont_x):
+                                                                if (y_arriba[int((contador-1)/2)]  < cont_y):
+                                                                    if ( y_arriba[int((contador-1)/2)] > y_aux_abajo):
+                                                                        y_aux_abajo=y_arriba[int((contador-1)/2)]
+                                                        else:
+                                                            if (aux_1 < cont_x and x_aux > posicion_x_final):
+                                                                if (y_arriba[int((contador-1)/2)]  < cont_y):
+                                                                    if ( y_arriba[int((contador-1)/2)] > y_aux_abajo):
+                                                                        y_aux_abajo=y_arriba[int((contador-1)/2)]
+
                                                     else:
                                                         if (cont_x>x_aux and cont_x < aux1 ):
-                                                            if ( y_arriba[int((contador-1)/2)] < y_aux_arriba):
-                                                                y_aux_arriba=y_arriba[int((contador-1)/2)]
+                                                            if (y_arriba[int((contador-1)/2)]  > cont_y):
+                                                                if ( y_arriba[int((contador-1)/2)] < y_aux_arriba):
+                                                                    y_aux_arriba=y_arriba[int((contador-1)/2)]
+
+                                                        if (cont_x > posicion_x_final):
+                                                            if (x_aux < posicion_x_final and aux1 > cont_x):
+                                                                if (y_arriba[int((contador-1)/2)]  < cont_y):
+                                                                    if ( y_arriba[int((contador-1)/2)] > y_aux_abajo):
+                                                                        y_aux_abajo=y_arriba[int((contador-1)/2)]
+                                                        else:
+                                                            if (x_aux < cont_x and aux1 > posicion_x_final):
+                                                                if (y_arriba[int((contador-1)/2)]  < cont_y):
+                                                                    if ( y_arriba[int((contador-1)/2)] > y_aux_abajo):
+                                                                        y_aux_abajo=y_arriba[int((contador-1)/2)]
+
                                                             
                                                     if (cont_x > posicion_x_final):
                                                         if (aux1 > posicion_x_final and aux1 < cont_x):
-                                                            if ( y_arriba[int((contador-1)/2)] > y_aux_abajo):
-                                                                y_aux_abajo=y_arriba[int((contador-1)/2)]
+                                                            if (y_arriba[int((contador-1)/2)]  < cont_y):
+                                                                if ( y_arriba[int((contador-1)/2)] > y_aux_abajo):
+                                                                    y_aux_abajo=y_arriba[int((contador-1)/2)]
                                                     else:
                                                         if (aux1 > cont_x and aux1 < posicion_x_final):
-                                                            if ( y_arriba[int((contador-1)/2)] > y_aux_abajo):
-                                                                y_aux_abajo=y_arriba[int((contador-1)/2)]
+                                                            if (y_arriba[int((contador-1)/2)]  < cont_y):
+                                                                if ( y_arriba[int((contador-1)/2)] > y_aux_abajo):
+                                                                    y_aux_abajo=y_arriba[int((contador-1)/2)]
 
                                                 contador+=1
 
@@ -3587,14 +4128,25 @@ class Nudo:
                                             contador=0
                                             for y_aux in y_lista_intermedia:
                                                 if (y_aux > 0 and y_aux < cont_y):
-                                                    if (cont_x>posicion_x_final):
-                                                        if (posicion_x_final <= x_abajo_lista_intermedia[contador] and x_abajo_lista_intermedia[contador] <= cont_x):
-                                                            if (y_aux > y_aux_abajo):
+                                                    if (cont_x < posicion_x_final):
+                                                        if (x_abajo_lista_intermedia[contador] <=  x_arriba_lista_intermedia[contador] ):
+                                                            if (posicion_x_final>= x_abajo_lista_intermedia[contador] and posicion_x_final < x_arriba_lista_intermedia[contador]):
+                                                                if (y_aux > y_aux_abajo):
                                                                     y_aux_abajo=y_aux
+                                                        else:
+                                                            if (cont_x>= x_arriba_lista_intermedia[contador] and cont_x <= x_abajo_lista_intermedia[contador]):
+                                                                if (y_aux > y_aux_abajo):
+                                                                    y_aux_abajo=y_aux
+                                                            
                                                     else:
-                                                        if (cont_x <= x_abajo_lista_intermedia[contador] and x_abajo_lista_intermedia[contador] <= posicion_x_final):
-                                                            if (y_aux > y_aux_abajo):
-                                                                y_aux_abajo=y_aux
+                                                        if (x_abajo_lista_intermedia[contador] <=  x_arriba_lista_intermedia[contador] ):
+                                                            if (cont_x>= x_abajo_lista_intermedia[contador] and cont_x < x_arriba_lista_intermedia[contador]):
+                                                                if (y_aux > y_aux_abajo):
+                                                                    y_aux_abajo=y_aux
+                                                        else:
+                                                            if (posicion_x_final>= x_arriba_lista_intermedia[contador] and posicion_x_final <= x_abajo_lista_intermedia[contador]):
+                                                                if (y_aux > y_aux_abajo):
+                                                                    y_aux_abajo=y_aux
                                                 contador+=1
 
 
@@ -3622,43 +4174,435 @@ class Nudo:
                                                 puntos_aux.append(punto)
                                                 cont_y=y_lista_fuera_raiz[lista_fuera_raiz.index(valor_asociado)]+0.1
 
-                                else:           #misma_rama==False
-                                    
-                                    y_intermedia=( (cont_y+y_lista_fuera_raiz[lista_fuera_raiz.index(valor_asociado)])/2)
-                                    punto=[cont_x, y_intermedia]
-                                    puntos_aux.append(punto)
-                                    puntos_aux.append(punto)
+                                else:           #misma_rama==False, es decir estamos yendo de un cruce que hemos recorrido ya las dos veces a otro que lo vamos a volver a recorrer, estando los dos en distintas ramas
+                                    if ((arriba==True and y_lista_fuera_raiz[lista_fuera_raiz.index(valor_asociado)] > 0) or (arriba==False and y_lista_fuera_raiz[lista_fuera_raiz.index(valor_asociado)] < 0) ):
 
-                                    
-                                    y_lista_intermedia.append(y_intermedia)
-                                    if (y_intermedia < cont_y):
-                                        x_arriba_lista_intermedia.append(cont_x)
-                                        x_abajo_lista_intermedia.append(posicion_x_final)
+
                                         
-                                    else:
-                                        x_abajo_lista_intermedia.append(cont_x)
-                                        x_arriba_lista_intermedia.append(posicion_x_final)  
-                                    
+                                        if (arriba==False and ( (cont_y >= puntos_aux[len(puntos_aux)-3][1] and y_lista_fuera_raiz[lista_fuera_raiz.index(valor_asociado)] < cont_y) or  (cont_y < puntos_aux[len(puntos_aux)-3][1] and y_lista_fuera_raiz[lista_fuera_raiz.index(valor_asociado)] > cont_y)) ):
+                                            if (cont_y >= puntos_aux[len(puntos_aux)-3][1] and y_lista_fuera_raiz[lista_fuera_raiz.index(valor_asociado)]):
 
-                                    cont_x=posicion_x_final
-                                    punto=[cont_x, y_intermedia]
-                                    puntos_aux.append(punto)
-                                    puntos_aux.append(punto)
+                                                contador=0
+                                            
+                                        
+                                                y_aux_arriba=0
 
-                                    if (signo=='Pos'): #Si el cruce es superior
-                                        cont_y=y_lista_fuera_raiz[lista_fuera_raiz.index(valor_asociado)]
+                                                for x_aux in x_abajo:
+                                                    if ((contador % 2)==0):
+                                                        aux1=x_aux
+                                                    if ((contador % 2)==1):
+                                                        if (x_aux>aux1):
+                                                            if (cont_x>aux1 and cont_x < x_aux):
+                                                                if ( y_abajo[int((contador-1)/2)] < y_aux_arriba and y_abajo[int((contador-1)/2)] > cont_y):
+                                                                    y_aux_arriba=y_abajo[int((contador-1)/2)]
+                                                        else:
+                                                            if (cont_x>x_aux and cont_x < aux1 ):
+                                                                if ( y_abajo[int((contador-1)/2)] < y_aux_arriba and y_abajo[int((contador-1)/2)] > cont_y):
+                                                                    y_aux_arriba=y_abajo[int((contador-1)/2)]
+                                                                
+
+                                                        
+                                                    contador+=1
+                                                
+                                                y_intermedia=(y_aux_arriba+cont_y)/2
+                                                punto=[cont_x, y_intermedia]
+                                                puntos_aux.append(punto)
+                                                puntos_aux.append(punto)
+                                                x_abajo.append(cont_x)
+                                                x_abajo.append(posicion_x_final)
+                                                y_abajo.append(y_intermedia)
+                                                cont_x=posicion_x_final
+                                                punto=[cont_x, y_intermedia]
+                                                puntos_aux.append(punto)
+                                                puntos_aux.append(punto)
+                                                if (signo=='Pos'): #Si el cruce es superior
+                                                    cont_y=y_lista_fuera_raiz[lista_fuera_raiz.index(valor_asociado)]
+                                                    punto=[cont_x, cont_y]
+                                                    puntos_aux.append(punto)
+                                                else:
+                                                    punto=[cont_x, y_lista_fuera_raiz[lista_fuera_raiz.index(valor_asociado)]+0.1]
+                                                    puntos_aux.append(punto)
+                                                    cont_y=y_lista_fuera_raiz[lista_fuera_raiz.index(valor_asociado)]-0.1
+
+                                        else:
+                                            y_aux_abajo=cont_y
+                                            y_aux_arriba=y_lista_fuera_raiz[lista_fuera_raiz.index(valor_asociado)] 
+                                            if (arriba==False):
+                                                
+                                                if (y_lista_fuera_raiz[lista_fuera_raiz.index(valor_asociado)] > cont_y):
+                                                    contador=0
+                                                    for x_aux in x_abajo:
+                                                        if ((contador % 2)==0):
+                                                            aux1=x_aux
+                                                        if ((contador % 2)==1):
+                                                            if (x_aux>aux1):
+                                                                x_menor=aux1
+                                                                x_mayor=x_aux
+                                                            else:
+                                                                x_menor=x_aux
+                                                                x_mayor=aux1
+
+                                                            if (posicion_x_final >= x_menor and posicion_x_final <= x_mayor ):
+                                                                if (y_abajo[int((contador-1)/2)] > cont_y and y_abajo[int((contador-1)/2)] < y_lista_fuera_raiz[lista_fuera_raiz.index(valor_asociado)]):
+                                                                    y_aux_abajo=y_abajo[int((contador-1)/2)]
+                                                            
+                                                            if (cont_x >= x_menor and cont_x <= x_mayor ):
+                                                                if (y_abajo[int((contador-1)/2)] > cont_y and y_abajo[int((contador-1)/2)] < y_lista_fuera_raiz[lista_fuera_raiz.index(valor_asociado)]):
+                                                                    y_aux_arriba=y_abajo[int((contador-1)/2)]
+
+                                                            
+                                                        contador+=1
+                                                    contador=0
+                                                    if(posicion_x_final> cont_x):
+                                                        for y_aux in y_lista_intermedia:
+                                                            if (y_aux > cont_y and y_aux < y_lista_fuera_raiz[lista_fuera_raiz.index(valor_asociado)]):
+                                                                if (x_abajo_lista_intermedia[contador] <= cont_x and x_arriba_lista_intermedia[contador] >= cont_x):
+                                                                    y_aux_arriba=y_aux
+                                                            
+                                                                if (x_abajo_lista_intermedia[contador] <= posicion_x_final and x_arriba_lista_intermedia[contador] >= posicion_x_final):
+                                                                    y_aux_abajo=y_aux
+                                                            contador+=1
+                                                    else:
+                                                        for y_aux in y_lista_intermedia:
+                                                            if (y_aux > cont_y and y_aux < y_lista_fuera_raiz[lista_fuera_raiz.index(valor_asociado)]):
+                                                                if (x_arriba_lista_intermedia[contador] <= cont_x and x_abajo_lista_intermedia[contador] >= cont_x):
+                                                                    y_aux_arriba=y_aux
+                                                            
+                                                                if (x_arriba_lista_intermedia[contador] <= posicion_x_final and x_abajo_lista_intermedia[contador] >= posicion_x_final):
+                                                                    y_aux_abajo=y_aux
+                                                            contador+=1
+                                                else:
+                                                    y_aux_abajo=y_lista_fuera_raiz[lista_fuera_raiz.index(valor_asociado)]
+                                                    y_aux_arriba=cont_y
+                                                    contador=0
+                                                    for x_aux in x_abajo:
+                                                        if ((contador % 2)==0):
+                                                            aux1=x_aux
+                                                        if ((contador % 2)==1):
+                                                            if (x_aux>aux1):
+                                                                x_menor=aux1
+                                                                x_mayor=x_aux
+                                                            else:
+                                                                x_menor=x_aux
+                                                                x_mayor=aux1
+
+                                                            if (posicion_x_final >= x_menor and posicion_x_final <= x_mayor ):
+                                                                if (y_abajo[int((contador-1)/2)] > y_lista_fuera_raiz[lista_fuera_raiz.index(valor_asociado)] and y_abajo[int((contador-1)/2)] < cont_y):
+                                                                    y_aux_arriba=y_abajo[int((contador-1)/2)]
+                                                            
+                                                            if (cont_x >= x_menor and cont_x <= x_mayor ):
+                                                                if (y_abajo[int((contador-1)/2)] > y_lista_fuera_raiz[lista_fuera_raiz.index(valor_asociado)] and y_abajo[int((contador-1)/2)] < cont_y):
+                                                                    y_aux_abajo=y_abajo[int((contador-1)/2)]
+
+                                                            
+                                                        contador+=1
+
+                                                    contador=0
+                                                    if(posicion_x_final> cont_x):
+                                                        for y_aux in y_lista_intermedia:
+                                                            if (y_aux > y_lista_fuera_raiz[lista_fuera_raiz.index(valor_asociado)] and y_aux < cont_y):
+                                                                if (x_arriba_lista_intermedia[contador] <= cont_x and x_abajo_lista_intermedia[contador] >= cont_x):
+                                                                    y_aux_abajo=y_aux
+                                                                
+                                                                if (x_arriba_lista_intermedia[contador] <= posicion_x_final and x_abajo_lista_intermedia[contador] >= posicion_x_final):
+                                                                    y_aux_arriba=y_aux
+                                                            contador+=1
+                                                    else:
+                                                        for y_aux in y_lista_intermedia:
+                                                            if (y_aux > y_lista_fuera_raiz[lista_fuera_raiz.index(valor_asociado)] and y_aux < cont_y):
+                                                                if (x_abajo_lista_intermedia[contador] <= cont_x and x_arriba_lista_intermedia[contador] >= cont_x):
+                                                                    y_aux_abajo=y_aux
+                                                                
+                                                                if (x_abajo_lista_intermedia[contador] <= posicion_x_final and x_arriba_lista_intermedia[contador] >= posicion_x_final):
+                                                                    y_aux_arriba=y_aux
+
+
+                                                    
+                                                    
+                                            if (y_aux_arriba==y_aux_abajo):             #9,46
+                                                y_aux_abajo-=0.1
+                                            y_intermedia=( (y_aux_abajo+y_aux_arriba)/2)
+                                            punto=[cont_x, y_intermedia]
+                                            puntos_aux.append(punto)
+                                            puntos_aux.append(punto)
+
+                                            
+                                            y_lista_intermedia.append(y_intermedia)
+                                            if (y_intermedia < cont_y):
+                                                x_arriba_lista_intermedia.append(cont_x)
+                                                x_abajo_lista_intermedia.append(posicion_x_final)
+                                                
+                                            else:
+                                                x_abajo_lista_intermedia.append(cont_x)
+                                                x_arriba_lista_intermedia.append(posicion_x_final)  
+                                            
+
+                                            cont_x=posicion_x_final
+                                            punto=[cont_x, y_intermedia]
+                                            puntos_aux.append(punto)
+                                            puntos_aux.append(punto)
+
+                                            if (signo=='Pos'): #Si el cruce es superior
+                                                cont_y=y_lista_fuera_raiz[lista_fuera_raiz.index(valor_asociado)]
+                                                punto=[cont_x, cont_y]
+                                                puntos_aux.append(punto)
+                                            else:
+                                                if (y_intermedia < cont_y):
+                                                    punto=[cont_x, y_lista_fuera_raiz[lista_fuera_raiz.index(valor_asociado)]+0.1]
+                                                    puntos_aux.append(punto)
+                                                    cont_y=y_lista_fuera_raiz[lista_fuera_raiz.index(valor_asociado)]-0.1
+                                                else:
+                                                    punto=[cont_x, y_lista_fuera_raiz[lista_fuera_raiz.index(valor_asociado)]-0.1]
+                                                    puntos_aux.append(punto)
+                                                    cont_y=y_lista_fuera_raiz[lista_fuera_raiz.index(valor_asociado)]+0.1
+                                        
+                                    else:   #Hay que dar la vuelta
+                                        posicion_relativa_x=posicion_x_final
+                                        if (abs(cont_x- x_maximo)>1):
+                                            if (-1 in x_arriba):
+                                                
+                                                if ( x_arriba.index(-1) %2==0 ):
+                                                    if (x_arriba[x_arriba.index(-1)+1] > cont_x) :
+                                                        posicion_x_final=-0.75
+                                                    else: 
+                                                        posicion_x_final=-1.5
+
+                                                else:
+                                                    if (x_arriba[x_arriba.index(-1)-1] > cont_x) :
+                                                        posicion_x_final=-0.75
+                                                    else: 
+                                                        posicion_x_final=-1.5
+
+
+                                            else:
+                                                posicion_x_final=-1 #Dado que vamos a dar la vuelta por la izquierda del nudo 
+                                        else:
+                                            posicion_x_final=(x_maximo+0.5)
+                                        
+
+                                        contador=0
+                                        
+
+                                        y_aux_arriba=100
+                                        y_aux_abajo=0
+
+                                        for x_aux in x_arriba:
+                                            if ((contador % 2)==0):
+                                                aux1=x_aux
+                                            if ((contador % 2)==1):
+                                                if (x_aux>aux1):
+                                                    if (cont_x>aux1 and cont_x < x_aux ):
+                                                        if ( y_arriba[int((contador-1)/2)] < y_aux_arriba):
+                                                            y_aux_arriba=y_arriba[int((contador-1)/2)]
+                                                else:
+                                                    if (cont_x>x_aux and cont_x < aux1 ):
+                                                        if ( y_arriba[int((contador-1)/2)] < y_aux_arriba):
+                                                            y_aux_arriba=y_arriba[int((contador-1)/2)]
+                                                        
+                                                if (cont_x > posicion_x_final):
+                                                    if (aux1 > posicion_x_final and aux1 < cont_x):
+                                                        if ( y_arriba[int((contador-1)/2)] > y_aux_abajo):
+                                                            y_aux_abajo=y_arriba[int((contador-1)/2)]
+                                                else:
+                                                    if (aux1 > cont_x and aux1 < posicion_x_final):
+                                                        if ( y_arriba[int((contador-1)/2)] > y_aux_abajo):
+                                                            y_aux_abajo=y_arriba[int((contador-1)/2)]
+
+                                            contador+=1
+                                        
+                                        contador=0
+                                        for y_aux in y_lista_fuera_raiz:
+                                            if (y_aux > 0):
+                                                if (cont_y >= y_aux):
+                                                    if (x_lista_fuera_raiz[2*contador] < x_lista_fuera_raiz[2*contador + 1]):
+                                                        if ( x_lista_fuera_raiz[2*contador] < cont_x and cont_x < x_lista_fuera_raiz[2*contador + 1]  ):
+                                                            if (y_aux > y_aux_abajo):
+                                                                y_aux_abajo=y_aux
+                                                    else:
+                                                        if ( x_lista_fuera_raiz[2*contador] > cont_x and cont_x > x_lista_fuera_raiz[2*contador + 1]  ):
+                                                            if (y_aux > y_aux_abajo):
+                                                                y_aux_abajo=y_aux
+                                                else:
+                                                    if (x_lista_fuera_raiz[2*contador] < x_lista_fuera_raiz[2*contador + 1]):
+                                                        if ( x_lista_fuera_raiz[2*contador] < cont_x and cont_x < x_lista_fuera_raiz[2*contador + 1]  ):
+                                                            if (y_aux < y_aux_arriba):
+                                                                y_aux_arriba=y_aux
+                                                        
+                                                        if (cont_x < x_lista_fuera_raiz[2*contador] and posicion_x_final > x_lista_fuera_raiz[2*contador+1] ):
+                                                            if (y_aux > y_aux_abajo):
+                                                                y_aux_abajo=y_aux
+                                                        
+                                                        if (posicion_x_final < x_lista_fuera_raiz[2*contador] and cont_x > x_lista_fuera_raiz[2*contador+1] ):
+                                                            if (y_aux > y_aux_abajo):
+                                                                y_aux_abajo=y_aux
+
+                                                    else:
+                                                        if ( x_lista_fuera_raiz[2*contador] > cont_x and cont_x > x_lista_fuera_raiz[2*contador + 1]  ):
+                                                            if (y_aux < y_aux_arriba):
+                                                                y_aux_arriba=y_aux
+                                                        
+                                                        if (cont_x < x_lista_fuera_raiz[2*contador+1] and posicion_x_final > x_lista_fuera_raiz[2*contador] ):
+                                                            if (y_aux > y_aux_abajo):
+                                                                y_aux_abajo=y_aux
+                                                        
+                                                        if (posicion_x_final < x_lista_fuera_raiz[2*contador+1] and cont_x > x_lista_fuera_raiz[2*contador] ):
+                                                            if (y_aux > y_aux_abajo):
+                                                                y_aux_abajo=y_aux
+
+                                            contador+=1
+                                        
+                                        if (y_aux_arriba==100):
+                                            if (y_aux_abajo==0):
+                                                cont_y=1
+                                            else:
+                                                cont_y=y_aux_abajo+0.5
+
+                                        else:
+                                            if (y_aux_abajo==0):
+                                                cont_y=y_aux_arriba/2 #Dividimos entre dos para asegurarnos de que no sea negativo 
+                                            else:
+                                                cont_y= (y_aux_arriba + y_aux_abajo)/2  
+
+                                        y_arriba.append(cont_y)
                                         punto=[cont_x, cont_y]
                                         puntos_aux.append(punto)
-                                    else:
-                                        if (y_intermedia < cont_y):
-                                            punto=[cont_x, y_lista_fuera_raiz[lista_fuera_raiz.index(valor_asociado)]+0.1]
-                                            puntos_aux.append(punto)
-                                            cont_y=y_lista_fuera_raiz[lista_fuera_raiz.index(valor_asociado)]-0.1
+                                        puntos_aux.append(punto)
+                                        x_arriba.append(cont_x)
+                                        x_arriba.append(posicion_x_final)
+                                        cont_x=posicion_x_final
+                                        punto=[cont_x, cont_y]
+                                        puntos_aux.append(punto)
+                                        puntos_aux.append(punto)
+
+                                        posicion_x_final=posicion_relativa_x
+
+                                        contador=0
+                                        
+                                        y_aux_abajo=-100
+                                        y_aux_arriba=0
+
+                                        for x_aux in x_abajo:
+                                            if ((contador % 2)==0):
+                                                aux1=x_aux
+                                            if ((contador % 2)==1):
+                                                if (x_aux>aux1):
+                                                    if (cont_x>aux1 and cont_x < x_aux ):
+                                                        if ( y_abajo[int((contador-1)/2)] > y_aux_abajo):
+                                                            y_aux_abajo=y_abajo[int((contador-1)/2)]
+                                                    
+                                                    if (posicion_x_final>aux1 and posicion_x_final < x_aux ):
+                                                        if (y_abajo[int((contador-1)/2)]  > y_lista_fuera_raiz[lista_fuera_raiz.index(valor_asociado)]):
+                                                            if ( y_abajo[int((contador-1)/2)] < y_aux_arriba):
+                                                                y_aux_arriba=y_abajo[int((contador-1)/2)]
+
+                                                else:
+                                                    if (cont_x>x_aux and cont_x < aux1 ):
+                                                        if ( y_abajo[int((contador-1)/2)] > y_aux_abajo):
+                                                            y_aux_abajo=y_abajo[int((contador-1)/2)]
+
+                                                    if (posicion_x_final>x_aux and posicion_x_final < aux1 ):
+                                                        if (y_abajo[int((contador-1)/2)]  > y_lista_fuera_raiz[lista_fuera_raiz.index(valor_asociado)]):
+                                                            if ( y_abajo[int((contador-1)/2)] < y_aux_arriba):
+                                                                y_aux_arriba=y_abajo[int((contador-1)/2)]
+                                                    
+                                                        
+                                                if (cont_x > posicion_x_final):
+                                                    if (aux1 > posicion_x_final and aux1 < cont_x):
+                                                        if ( y_abajo[int((contador-1)/2)] < y_aux_arriba):
+                                                            y_aux_arriba=y_abajo[int((contador-1)/2)]
+                                                else:
+                                                    if (aux1 > cont_x and aux1 < posicion_x_final):
+                                                        if ( y_abajo[int((contador-1)/2)] < y_aux_arriba):
+                                                            y_aux_arriba=y_abajo[int((contador-1)/2)]
+
+                                                
+                                            contador+=1
+                                        
+
+                                        contador=0
+                                        for y_aux in y_lista_fuera_raiz:
+                                            if (y_aux < 0):
+                                                if (cont_y <= y_aux):
+                                                    if (x_lista_fuera_raiz[2*contador] < x_lista_fuera_raiz[2*contador + 1]):
+                                                        if ( x_lista_fuera_raiz[2*contador] < cont_x and cont_x < x_lista_fuera_raiz[2*contador + 1]  ):
+                                                            if (y_aux < y_aux_arriba):
+                                                                y_aux_arriba=y_aux
+                                                    else:
+                                                        if ( x_lista_fuera_raiz[2*contador] > cont_x and cont_x > x_lista_fuera_raiz[2*contador + 1]  ):
+                                                            if (y_aux < y_aux_arriba):
+                                                                y_aux_arriba=y_aux
+                                                else:
+                                                    if (x_lista_fuera_raiz[2*contador] < x_lista_fuera_raiz[2*contador + 1]):
+                                                        if ( x_lista_fuera_raiz[2*contador] < cont_x and cont_x < x_lista_fuera_raiz[2*contador + 1]  ):
+                                                            if (y_aux > y_aux_abajo):
+                                                                y_aux_abajo=y_aux
+                                                        
+                                                        if ( posicion_x_final < x_lista_fuera_raiz[2*contador]   and cont_x > x_lista_fuera_raiz[2*contador + 1] ):
+                                                            if (y_aux < y_aux_arriba):
+                                                                y_aux_arriba=y_aux
+
+                                                        if ( cont_x < x_lista_fuera_raiz[2*contador]   and posicion_x_final > x_lista_fuera_raiz[2*contador + 1] ):
+                                                            if (y_aux < y_aux_arriba):
+                                                                y_aux_arriba=y_aux
+
+                                                    else:
+                                                        if ( x_lista_fuera_raiz[2*contador] > cont_x and cont_x > x_lista_fuera_raiz[2*contador + 1]  ):
+                                                            if (y_aux > y_aux_abajo):
+                                                                y_aux_abajo=y_aux
+                                                        
+                                                        if ( posicion_x_final < x_lista_fuera_raiz[2*contador+1]   and cont_x > x_lista_fuera_raiz[2*contador ] ):
+                                                            if (y_aux < y_aux_arriba):
+                                                                y_aux_arriba=y_aux
+
+                                                        if ( cont_x < x_lista_fuera_raiz[2*contador+1]   and posicion_x_final > x_lista_fuera_raiz[2*contador] ):
+                                                            if (y_aux < y_aux_arriba):
+                                                                y_aux_arriba=y_aux
+
+                                            contador+=1
+
+                                        if (y_aux_arriba==0):
+                                            if (y_aux_abajo==-100):
+                                                cont_y=-1
+                                            else:
+                                                cont_y=y_aux_abajo/2
+
                                         else:
-                                            punto=[cont_x, y_lista_fuera_raiz[lista_fuera_raiz.index(valor_asociado)]-0.1]
+                                            if (y_aux_abajo==-100):
+                                                cont_y=y_aux_arriba - 0.5 #Dividimos entre dos para asegurarnos de que no sea negativo 
+                                            else:
+                                                cont_y= (y_aux_arriba + y_aux_abajo)/2  
+                                        
+
+                                        punto=[cont_x, cont_y]
+                                        puntos_aux.append(punto)
+                                        puntos_aux.append(punto)
+
+                                        y_abajo.append(cont_y)
+                                        x_abajo.append(cont_x)
+                                        x_abajo.append(posicion_x_final)
+
+                                        cont_x=posicion_x_final
+                                        punto=[cont_x, cont_y]
+                                        puntos_aux.append(punto)
+                                        puntos_aux.append(punto)
+                                        arriba=False
+                                        
+
+                                    
+                                        if (signo=='Neg'): #Es decir, si el cruce es inferior
+
+                                            punto=[cont_x,y_lista_fuera_raiz[lista_fuera_raiz.index(valor_asociado)]+ 0.1]
+                                            cont_y=y_lista_fuera_raiz[lista_fuera_raiz.index(valor_asociado)]-0.1
+
                                             puntos_aux.append(punto)
-                                            cont_y=y_lista_fuera_raiz[lista_fuera_raiz.index(valor_asociado)]+0.1
-                            
+                                            
+                                        else:
+                                            cont_y=y_lista_fuera_raiz[lista_fuera_raiz.index(valor_asociado)]
+                                            punto=[cont_x, cont_y]
+                                            puntos_aux.append(punto)   
+                                        
+
+
                             else:       #Si no estás dentro
                                 if (arriba==True):
                                     contador=0
@@ -3691,6 +4635,7 @@ class Nudo:
                                         contador+=1
                                     
                                     if (-0.1 <= cont_y and cont_y <=0.1):
+                                        contador=0
                                         for y_aux in y_lista_fuera_raiz:
                                             if (y_aux > 0):
                                                 if (contador!=indice):
@@ -3709,6 +4654,12 @@ class Nudo:
                                         y_aux_arriba=y_lista_fuera_raiz[indice]+1 #Si no hay límite por arriba le sumo uno para que al dividir la suma entre 2 me queda que le sume 0.5 
 
                                     y_intermedia= (y_lista_fuera_raiz[indice]+y_aux_arriba)/2
+
+                                    if (y_intermedia > cont_y and y_intermedia > y_lista_fuera_raiz[indice]):
+                                        x_arriba.append(cont_x)
+                                        x_arriba.append(posicion_x_final)
+                                        y_arriba.append(y_intermedia)
+
                                     punto=[cont_x, y_intermedia]
                                     puntos_aux.append(punto)
                                     puntos_aux.append(punto)
@@ -3736,15 +4687,15 @@ class Nudo:
                                             aux1=x_aux
                                         if ((contador % 2)==1):
                                             if (x_aux>aux1):
-                                                print ('cont_x: '+ str(cont_x) + ' aux1: '+ str(aux1) + ' x_aux: '+ str(x_aux))
                                                 if (cont_x>aux1 and cont_x < x_aux ):
-                                                    if ( y_abajo[int((contador-1)/2)] > y_aux_abajo):
-                                                        y_aux_abajo=y_abajo[int((contador-1)/2)]
+                                                    if (y_abajo[int((contador-1)/2)] < cont_y):
+                                                        if ( y_abajo[int((contador-1)/2)] > y_aux_abajo):
+                                                            y_aux_abajo=y_abajo[int((contador-1)/2)]
                                             else:
-                                                print ('cont_x: '+ str(cont_x)  + ' x_aux: '+ str(x_aux)+ ' aux1: '+ str(aux1))
                                                 if (cont_x>x_aux and cont_x < aux1 ):
-                                                    if ( y_abajo[int((contador-1)/2)] > y_aux_abajo):
-                                                        y_aux_abajo=y_abajo[int((contador-1)/2)]
+                                                    if (y_abajo[int((contador-1)/2)] < cont_y):
+                                                        if ( y_abajo[int((contador-1)/2)] > y_aux_abajo):
+                                                            y_aux_abajo=y_abajo[int((contador-1)/2)]
                                                     
                                             if (cont_x > posicion_x_final):
                                                 if (aux1 > posicion_x_final and aux1 < cont_x):
@@ -3773,11 +4724,34 @@ class Nudo:
                                                                 y_aux_abajo=y_aux
 
                                             contador+=1
-                                            
+                                    
+                                        
+                                    
+                                    
                                     if (y_aux_abajo==-100):
                                         y_aux_abajo=y_lista_fuera_raiz[indice]-1 #Para que al dividir entre 2 se le reste 0.5 a la original
+                                    
+                                    entraif=False
+                                    if (puntos_aux[len(puntos_aux)-3][1] <= cont_y): #Estoy yendo para arriba
+                                        if (y_lista_fuera_raiz_altura[indice]=="ar" or ( (posicion_x_final < cont_x and y_lista_fuera_raiz_altura[indice]=="arab") or (posicion_x_final > cont_x and y_lista_fuera_raiz_altura[indice]=="abar"))):
+                                            entraif=True
+                                            y_aux_abajo=(y_lista_fuera_raiz[indice]+0.4)
+                                            x_abajo.append(cont_x)
+                                            x_abajo.append(posicion_x_final)
+                                            y_abajo.append((y_lista_fuera_raiz[indice]+y_aux_abajo)/2)
+                                        else:
+                                            y_aux_abajo=cont_y
+                                            x_abajo_lista_intermedia.append(cont_x)
+                                            x_arriba_lista_intermedia.append(posicion_x_final)
+                                            y_lista_intermedia.append((y_lista_fuera_raiz[indice]+y_aux_abajo)/2)
 
                                     y_intermedia= (y_lista_fuera_raiz[indice]+y_aux_abajo)/2
+
+                                    if (y_intermedia < cont_y and y_intermedia < y_lista_fuera_raiz[indice]):
+                                        x_abajo.append(cont_x)
+                                        x_abajo.append(posicion_x_final)
+                                        y_abajo.append(y_intermedia)
+
                                     punto=[cont_x, y_intermedia]
                                     puntos_aux.append(punto)
                                     puntos_aux.append(punto)
@@ -3790,17 +4764,24 @@ class Nudo:
                                         punto=[cont_x, cont_y]
                                         puntos_aux.append(punto)
                                     else:
-                                        punto=[cont_x, y_lista_fuera_raiz[indice]-0.1]
-                                        puntos_aux.append(punto)
-                                        cont_y=y_lista_fuera_raiz[indice] + 0.1
+                                        if (entraif):
+                                            punto=[cont_x, y_lista_fuera_raiz[indice]+0.1]
+                                            puntos_aux.append(punto)
+                                            cont_y=y_lista_fuera_raiz[indice] - 0.1
+                                        else:
+                                            punto=[cont_x, y_lista_fuera_raiz[indice]-0.1]
+                                            puntos_aux.append(punto)
+                                            cont_y=y_lista_fuera_raiz[indice] + 0.1
+                                        
 
                             
                                                 
 
                         else:                           #Si el valor asociado está en la raíz principal 
                             if arriba:     
-                                arriba=False
-                                if not y_arriba:                    #si es la primera vez que se va a pasar dos veces por el mismo cruce
+                                arriba=False            #Ya que una vez que lleguemos a dicho cruce tendremos que seguir recorriendo el nudo por debajo de dicha raiz principal 
+
+                                if not y_arriba:                    #si es la primera vez que se va a pasar dos veces por el mismo cruce.
                                     y_arriba.append(1)
                                     cont_x=lista2[len(lista2)-1]+0.5
                                     x_1=cont_x
@@ -3812,7 +4793,6 @@ class Nudo:
                                     punto=[cont_x, y_arriba[len(y_arriba)-1]]
                                     puntos_aux.append(punto)
                                     puntos_aux.append(punto)
-                                    print (x_arriba[len(x_arriba)-1])
                                     punto=[x_arriba[len(x_arriba)-1], y_arriba[len(y_arriba)-1]]
                                     puntos_aux.append(punto)
                                     puntos_aux.append(punto)
@@ -3828,368 +4808,352 @@ class Nudo:
 
                                     cont_x=posicion_x_final
                                                         
-                                else: #si ya han sido varias veces las que se va a ir por encima del nudo (es decir, ahora la y no va a poder ser 1)
-                                    print('y_arriba_par: ')
-                                    
-                                    darVuelta=False
-                                    contador=0
-                                    for x_aux in x_arriba:
-                                        if ((contador % 2)==0):
-                                            aux1=x_aux
-                                        if ((contador % 2)==1):
-                                            if (aux1 > x_aux):
-                                                x_mayor=aux1
-                                                x_menor=x_aux
-
-                                            else:
-                                                x_mayor=x_aux
-                                                x_menor=aux1
-
-                                            if (cont_x < x_menor or cont_x > x_mayor):
-                                                if (x_menor < posicion_x_final and posicion_x_final < x_mayor):
-                                                    darVuelta=True
-                                                                                    
-                                        contador+=1
-                                    
-                                    if (darVuelta==True):   #Esto es para reutilizar código, aquí faltaría precisar que no siempre posicion_x_final será -1
-                                        posicion_relativa_x=posicion_x_final
-                                        posicion_x_final=-1 #Dado que vamos a dar la vuelta 
-
-                                    
-                                    contador=0
-                                    punto=[cont_x, cont_y]
-                                    puntos_aux.append(punto)
-                                    
-
-                                    y_aux_arriba=100
-                                    y_aux_abajo=0
-
-                                    for x_aux in x_arriba:
-                                        if ((contador % 2)==0):
-                                            aux1=x_aux
-                                        if ((contador % 2)==1):
-                                            if (x_aux>aux1):
-                                                if (cont_x>aux1 and cont_x < x_aux ):
-                                                    if ( y_arriba[int((contador-1)/2)] < y_aux_arriba):
-                                                        y_aux_arriba=y_arriba[int((contador-1)/2)]
-                                            else:
-                                                if (cont_x>x_aux and cont_x < aux1 ):
-                                                    if ( y_arriba[int((contador-1)/2)] < y_aux_arriba):
-                                                        y_aux_arriba=y_arriba[int((contador-1)/2)]
-                                                    
-                                            if (cont_x > posicion_x_final):
-                                                if (aux1 > posicion_x_final and aux1 < cont_x):
-                                                    if ( y_arriba[int((contador-1)/2)] > y_aux_abajo):
-                                                        y_aux_abajo=y_arriba[int((contador-1)/2)]
-                                            else:
-                                                if (aux1 > cont_x and aux1 < posicion_x_final):
-                                                    if ( y_arriba[int((contador-1)/2)] > y_aux_abajo):
-                                                        y_aux_abajo=y_arriba[int((contador-1)/2)]
-
-                                        contador+=1
-                                    
-                                    contador=0
-                                    for y_aux in y_lista_fuera_raiz:
-                                        if (y_aux > 0):
-                                            if (cont_y >= y_aux):
-                                                if (x_lista_fuera_raiz[2*contador] < x_lista_fuera_raiz[2*contador + 1]):
-                                                    if ( x_lista_fuera_raiz[2*contador] < cont_x and cont_x < x_lista_fuera_raiz[2*contador + 1]  ):
-                                                        if (y_aux > y_aux_abajo):
-                                                            y_aux_abajo=y_aux
-                                                else:
-                                                    if ( x_lista_fuera_raiz[2*contador] > cont_x and cont_x > x_lista_fuera_raiz[2*contador + 1]  ):
-                                                        if (y_aux > y_aux_abajo):
-                                                            y_aux_abajo=y_aux
-                                            else:
-                                                if (x_lista_fuera_raiz[2*contador] < x_lista_fuera_raiz[2*contador + 1]):
-                                                    if ( x_lista_fuera_raiz[2*contador] < cont_x and cont_x < x_lista_fuera_raiz[2*contador + 1]  ):
-                                                        if (y_aux < y_aux_arriba):
-                                                            y_aux_arriba=y_aux
-                                                else:
-                                                    if ( x_lista_fuera_raiz[2*contador] > cont_x and cont_x > x_lista_fuera_raiz[2*contador + 1]  ):
-                                                        if (y_aux < y_aux_arriba):
-                                                            y_aux_arriba=y_aux
-
-                                        contador+=1
-                                    
-                                    if (y_aux_arriba==100):
-                                        if (y_aux_abajo==0):
-                                            cont_y=1
-                                        else:
-                                            cont_y=y_aux_abajo+0.5
-
-                                    else:
-                                        if (y_aux_abajo==0):
-                                            cont_y=y_aux_arriba/2 #Dividimos entre dos para asegurarnos de que no sea negativo 
-                                        else:
-                                            cont_y= (y_aux_arriba + y_aux_abajo)/2  
-
-                                    print('cont_y_after_impar: '+ str(cont_y))
-                                    y_arriba.append(cont_y)
-                                    punto=[cont_x, cont_y]
-                                    puntos_aux.append(punto)
-                                    puntos_aux.append(punto)
-                                    x_arriba.append(cont_x)
-                                    x_arriba.append(posicion_x_final)
-                                    cont_x=posicion_x_final
-                                    punto=[cont_x, cont_y]
-                                    puntos_aux.append(punto)
-                                    puntos_aux.append(punto)
-
-                                    if (darVuelta==True):
-                                        minimo=0
-                                        for y_ab in y_abajo:
-                                            if (y_ab < minimo):
-                                                minimo=y_ab
+                                else: #si ya han sido varias veces las que se va a ir por encima del nudo (es decir, ahora la y no va a poder ser 1)                                    
+                                    if (puntos_aux[len(puntos_aux)-2][1]>cont_y):
                                         
-                                        for y_ab in y_lista_fuera_raiz:
-                                            if (y_ab < minimo):
-                                                minimo=y_ab
-                                        
-                                        minimo-=0.5
-                                        cont_y=minimo
                                         punto=[cont_x, cont_y]
                                         puntos_aux.append(punto)
-                                        puntos_aux.append(punto)
-
-                                        y_abajo.append(minimo)
-                                        x_abajo.append(cont_x)
-                                        x_abajo.append(posicion_relativa_x)
-
-                                        cont_x=posicion_relativa_x
-                                        punto=[cont_x, cont_y]
+                                        y_intermedia=cont_y/2
+                                        punto=[cont_x, y_intermedia]
                                         puntos_aux.append(punto)
                                         puntos_aux.append(punto)
-                                        print('DA VUELTA impar arriba')
-                                        arriba=True #Porque vamos a seguir estando arriba
-                                        
-
-                                    
-                                    if (signo=='Neg'): #Es decir, si el cruce es inferior
-                                        if (darVuelta==True):
-                                            punto=[cont_x, -0.1]
-                                            cont_y=0.1
-                                        else:
+                                        cont_x=posicion_x_final
+                                        punto=[cont_x, y_intermedia]
+                                        puntos_aux.append(punto)
+                                        puntos_aux.append(punto)
+                                        if (signo=='Neg'): #Es decir, si el cruce es inferior
                                             punto=[cont_x, 0.1]
                                             cont_y=-0.1
-                                        puntos_aux.append(punto)
-                                        
+                                            puntos_aux.append(punto)
+                                            
+                                        else:
+                                            cont_y=0
+                                            punto=[cont_x, cont_y]
+                                            puntos_aux.append(punto)
+                                    
                                     else:
-                                        cont_y=0
-                                        punto=[cont_x, cont_y]
-                                        puntos_aux.append(punto)
+                                        darVuelta=False
+
+                                        if (problema_choque==True): #Es decir , si estamos volviendo para atrás 
+                                            darVuelta=True
+
+
+                                        contador=0      #Para comparar cuando tengamos los dos puntos de la arista 
+                                        for x_aux in x_arriba:
+                                            if ((contador % 2)==0):
+                                                aux1=x_aux
+                                            if ((contador % 2)==1):
+                                                if (aux1 > x_aux):
+                                                    x_mayor=aux1
+                                                    x_menor=x_aux
+
+                                                else:
+                                                    x_mayor=x_aux
+                                                    x_menor=aux1
+
+                                                if (cont_x < x_menor or cont_x > x_mayor):
+                                                    if (x_menor < posicion_x_final and posicion_x_final < x_mayor):
+                                                        darVuelta=True
+                                                
+                                                if ((x_menor < cont_x and cont_x < x_mayor) and (posicion_x_final < x_menor or posicion_x_final > x_mayor)):
+                                                    problema_choque=True
+                                                                                        
+                                            contador+=1
                                         
-                                    values = ','.join(str(v) for v in puntos_aux)
-                                    
-                                    print ('lista: ')
-                                    print(lista)
-                                    print('lista2: ')
-                                    print(lista2)
-                                    
+                                        contador=0
+                                        for y_aux in y_lista_fuera_raiz:
+                                            if (y_aux > 0):
+                                                if (x_lista_fuera_raiz[2*contador] < x_lista_fuera_raiz[2*contador + 1]):
+                                                    x_menor=x_lista_fuera_raiz[2*contador]
+                                                    x_mayor=x_lista_fuera_raiz[2*contador + 1]
+                                                else:
+                                                    x_mayor=x_lista_fuera_raiz[2*contador]
+                                                    x_menor=x_lista_fuera_raiz[2*contador + 1]
+                                                
+                                                if (cont_x < x_menor or cont_x > x_mayor):
+                                                    if (x_menor < posicion_x_final and posicion_x_final < x_mayor):
+                                                        
+                                                        darVuelta=True
+
+                                                if ((x_menor < cont_x and cont_x < x_mayor) and (posicion_x_final < x_menor or posicion_x_final > x_mayor)):
+                                                    if (cont_y < y_aux):
+                                                        problema_choque=True
+                                                    
+                                            contador+=1
+
+                                        if (darVuelta==True): #Tenemos que comprobar si se puede dar la vuelta o no, es decir, si va a chocar con las aristas inferiores
+                                            problema_choque=False
+                                            contador=0      #Para comparar cuando tengamos los dos puntos de la arista 
+                                            
+                                            for x_aux in x_abajo:
+                                                if ((contador % 2)==0):
+                                                    aux1=x_aux
+                                                if ((contador % 2)==1):
+                                                    if (aux1 > x_aux):
+                                                        x_mayor=aux1
+                                                        x_menor=x_aux
+
+                                                    else:
+                                                        x_mayor=x_aux
+                                                        x_menor=aux1
+
+                                                    if (x_menor < posicion_x_final and posicion_x_final < x_mayor):
+                                                        problema_choque=True
+                                                                                            
+                                                contador+=1
+                                            
+                                            contador=0
+                                            for y_aux in y_lista_fuera_raiz:
+                                                if (y_aux < 0):
+                                                    if (x_lista_fuera_raiz[2*contador] < x_lista_fuera_raiz[2*contador + 1]):
+                                                        x_menor=x_lista_fuera_raiz[2*contador]
+                                                        x_mayor=x_lista_fuera_raiz[2*contador + 1]
+                                                    else:
+                                                        x_mayor=x_lista_fuera_raiz[2*contador]
+                                                        x_menor=x_lista_fuera_raiz[2*contador + 1]
+                                                    
+                                                    if ((x_menor < posicion_x_final and posicion_x_final < x_mayor) and (x_menor>-0.5 and x_mayor < x_maximo)):
+                                                        problema_choque=True
+
+                                        if (problema_choque==False):
+
+                                            if (darVuelta==True):   #Esto es para reutilizar código, aquí faltaría precisar que no siempre posicion_x_final será -1
+                                                
+                                                posicion_relativa_x=posicion_x_final
+
+
+
+                                                if ( abs(cont_x- x_maximo)>1):
+                                                
+                                                
+                                                    
+                                                    contador=0
+                                                    minimo=-100
+                                                    maximo=-0.5
+                                                    for x_aux in x_abajo:
+                                                        if x_aux < 0:
+                                                            if (contador %2==0):
+                                                                if (x_abajo[contador+1] > posicion_x_final) :
+                                                                    if (minimo < x_aux):
+                                                                        minimo=x_aux
+                                                                else:
+                                                                    if (maximo > x_aux):
+                                                                        maximo=x_aux
+                                                            else:
+                                                                if (x_abajo[contador-1] > posicion_x_final) :
+                                                                    if (minimo < x_aux):
+                                                                        minimo=x_aux
+                                                                else:
+                                                                    if (maximo > x_aux):
+                                                                        maximo=x_aux
+                                                        contador+=1
+                                                    
+                                                    contador=0
+                                                    for x_aux in x_lista_fuera_raiz:
+                                                        if x_aux < 0:
+                                                            if (contador % 2==0):
+                                                                if (y_lista_fuera_raiz[int(contador/2)] < 0):
+                                                                    if (x_lista_fuera_raiz[contador+1] > posicion_x_final) :
+                                                                        if (minimo < x_aux):
+                                                                            minimo=x_aux
+                                                                    else:
+                                                                        if (maximo > x_aux):
+                                                                            maximo=x_aux
+                                                            else:
+                                                                if (y_lista_fuera_raiz[int((contador-1)/2)] < 0):
+                                                                    if (x_lista_fuera_raiz[contador-1] > posicion_x_final) :
+                                                                        if (minimo < x_aux):
+                                                                            minimo=x_aux
+                                                                    else:
+                                                                        if (maximo > x_aux):
+                                                                            maximo=x_aux
+                                                        contador+=1
+
+
+                                                    
+                                                    if (minimo==-100):
+                                                        posicion_x_final=(maximo-0.5)
+                                                    else:
+                                                        posicion_x_final=(minimo+maximo)/2
+
+                                                else:
+                                                    posicion_x_final=(x_maximo+0.5)
+
+                                            
+                                            contador=0
+                                            punto=[cont_x, cont_y]
+                                            puntos_aux.append(punto)
+                                            
+
+                                            y_aux_arriba=100
+                                            y_aux_abajo=0
+
+                                            for x_aux in x_arriba:
+                                                if ((contador % 2)==0):
+                                                    aux1=x_aux
+                                                if ((contador % 2)==1):
+                                                    if (x_aux>aux1):
+                                                        if (cont_x>aux1 and cont_x < x_aux ):
+                                                            if (cont_y < y_arriba[int((contador-1)/2)]):
+                                                                if ( y_arriba[int((contador-1)/2)] < y_aux_arriba):
+                                                                    y_aux_arriba=y_arriba[int((contador-1)/2)]
+                                                    else:
+                                                        if (cont_x>x_aux and cont_x < aux1 ):
+                                                            if (cont_y < y_arriba[int((contador-1)/2)]):
+                                                                if ( y_arriba[int((contador-1)/2)] < y_aux_arriba):
+                                                                    y_aux_arriba=y_arriba[int((contador-1)/2)]
+                                                            
+                                                    if (cont_x > posicion_x_final):
+                                                        if (aux1 > posicion_x_final and aux1 < cont_x):
+                                                            if ( y_arriba[int((contador-1)/2)] > y_aux_abajo):
+                                                                y_aux_abajo=y_arriba[int((contador-1)/2)]
+                                                    else:
+                                                        if (aux1 > cont_x and aux1 < posicion_x_final):
+                                                            if ( y_arriba[int((contador-1)/2)] > y_aux_abajo):
+                                                                y_aux_abajo=y_arriba[int((contador-1)/2)]
+
+                                                contador+=1
+                                            
+                                            contador=0
+                                            for y_aux in y_lista_fuera_raiz:
+                                                if (y_aux > 0):
+                                                    if (cont_y >= y_aux):
+                                                        if (x_lista_fuera_raiz[2*contador] < x_lista_fuera_raiz[2*contador + 1]):
+                                                            if ( x_lista_fuera_raiz[2*contador] < cont_x and cont_x < x_lista_fuera_raiz[2*contador + 1]  ):
+                                                                if (y_aux > y_aux_abajo):
+                                                                    y_aux_abajo=y_aux
+                                                        else:
+                                                            if ( x_lista_fuera_raiz[2*contador] > cont_x and cont_x > x_lista_fuera_raiz[2*contador + 1]  ):
+                                                                if (y_aux > y_aux_abajo):
+                                                                    y_aux_abajo=y_aux
+                                                    else:
+                                                        if (x_lista_fuera_raiz[2*contador] < x_lista_fuera_raiz[2*contador + 1]):
+                                                            if ( x_lista_fuera_raiz[2*contador] < cont_x and cont_x < x_lista_fuera_raiz[2*contador + 1]  ):
+                                                                if (y_aux < y_aux_arriba):
+                                                                    y_aux_arriba=y_aux
+                                                            
+                                                            if (cont_x < x_lista_fuera_raiz[2*contador] and posicion_x_final > x_lista_fuera_raiz[2*contador+1] ):
+                                                                if (y_aux > y_aux_abajo):
+                                                                    y_aux_abajo=y_aux
+                                                            
+                                                            if (posicion_x_final < x_lista_fuera_raiz[2*contador] and cont_x > x_lista_fuera_raiz[2*contador+1] ):
+                                                                if (y_aux > y_aux_abajo):
+                                                                    y_aux_abajo=y_aux
+
+                                                        else:
+                                                            if ( x_lista_fuera_raiz[2*contador] > cont_x and cont_x > x_lista_fuera_raiz[2*contador + 1]  ):
+                                                                if (y_aux < y_aux_arriba):
+                                                                    y_aux_arriba=y_aux
+                                                            
+                                                            if (cont_x < x_lista_fuera_raiz[2*contador+1] and posicion_x_final > x_lista_fuera_raiz[2*contador] ):
+                                                                if (y_aux > y_aux_abajo):
+                                                                    y_aux_abajo=y_aux
+                                                            
+                                                            if (posicion_x_final < x_lista_fuera_raiz[2*contador+1] and cont_x > x_lista_fuera_raiz[2*contador] ):
+                                                                if (y_aux > y_aux_abajo):
+                                                                    y_aux_abajo=y_aux
+
+                                                contador+=1
+                                            
+                                            if (y_aux_arriba==100):
+                                                if (y_aux_abajo==0):
+                                                    cont_y=1
+                                                else:
+                                                    cont_y=y_aux_abajo+0.5
+
+                                            else:
+                                                if (y_aux_abajo==0):
+                                                    cont_y=y_aux_arriba/2 #Dividimos entre dos para asegurarnos de que no sea negativo 
+                                                else:
+                                                    cont_y= (y_aux_arriba + y_aux_abajo)/2  
+
+                                            y_arriba.append(cont_y)
+                                            punto=[cont_x, cont_y]
+                                            puntos_aux.append(punto)
+                                            puntos_aux.append(punto)
+                                            x_arriba.append(cont_x)
+                                            x_arriba.append(posicion_x_final)
+                                            cont_x=posicion_x_final
+                                            punto=[cont_x, cont_y]
+                                            puntos_aux.append(punto)
+                                            puntos_aux.append(punto)
+
+                                            if (darVuelta==True):
+                                                minimo=0
+                                                for y_ab in y_abajo:
+                                                    if (y_ab < minimo):
+                                                        minimo=y_ab
+                                                
+                                                for y_ab in y_lista_fuera_raiz:
+                                                    if (y_ab < minimo):
+                                                        minimo=y_ab
+                                                
+                                                minimo-=0.5
+                                                cont_y=minimo
+                                                punto=[cont_x, cont_y]
+                                                puntos_aux.append(punto)
+                                                puntos_aux.append(punto)
+
+                                                y_abajo.append(minimo)
+                                                x_abajo.append(cont_x)
+                                                x_abajo.append(posicion_relativa_x)
+
+                                                cont_x=posicion_relativa_x
+                                                punto=[cont_x, cont_y]
+                                                puntos_aux.append(punto)
+                                                puntos_aux.append(punto)
+                                                arriba=True #Porque vamos a seguir estando arriba al dar la vuelta completa al nudo 
+                                                
+
+                                            
+                                            if (signo=='Neg'): #Es decir, si el cruce es inferior
+                                                if (darVuelta==True):
+                                                    punto=[cont_x, -0.1]
+                                                    cont_y=0.1
+                                                else:
+                                                    punto=[cont_x, 0.1]
+                                                    cont_y=-0.1
+
+                                                puntos_aux.append(punto)
+                                                
+                                            else:
+                                                cont_y=0
+                                                punto=[cont_x, cont_y]
+                                                puntos_aux.append(punto)                                    
+
+                                            
                                     
                             
-                            else:                                   #Si damos la vuelta por debajo a un punto de la raiz principal
+                            else:                                   #raiz principal==True, abajo==True, volver==True
                                 arriba=True
-                                if not y_abajo:
-                                    print ('not_y_abajo_par')
-                                    print (y_lista_fuera_raiz)
+                                
+                                existen_aristas_abajo=False
+                                for y_aux in y_lista_fuera_raiz:
+                                    if (y_aux < 0):
+                                        existen_aristas_abajo=True
+                                
+                                if (not y_abajo and (existen_aristas_abajo==False)):                     #Si no existe ningún elemento en y_abajo de todas formas puede existir algún elemento en y_lista_fuera_raiz por lo que hay que comprobarlo
                                     punto=[cont_x, cont_y]
                                     puntos_aux.append(punto)
-
-                                    y_aux_abajo=-100
-                                    y_aux_arriba=0
-                                    contador=0
-                                    for y_aux in y_lista_fuera_raiz:
-                                        if (y_aux < 0):
-
-                                            if (x_lista_fuera_raiz[2*contador] < x_lista_fuera_raiz[2*contador + 1]):
-                                                valor_mayor=x_lista_fuera_raiz[2*contador + 1]
-                                                valor_menor=x_lista_fuera_raiz[2*contador]
-                                            else:
-                                                valor_mayor=x_lista_fuera_raiz[2*contador]
-                                                valor_menor=x_lista_fuera_raiz[2*contador+1]
-                                            
-                                            print ('valor_menor: ' + str(valor_menor)+ ' valor_mayor: '+ str(valor_mayor)+ ' cont_x: '+ str(cont_x)+ ' posicion_x_final: '+ str(posicion_x_final)+ ' cont_y: '+  str(cont_y)+ ' y_aux: '+ str(y_aux))
-                                            if (cont_y <= y_aux):
-                                                if ( valor_menor < cont_x and cont_x < valor_mayor  ):
-                                                    if (y_aux < y_aux_arriba):
-                                                        y_aux_arriba=y_aux
-                                                
-                                                
-                                            else:
-                                                if (cont_x > posicion_x_final):
-                                                    if (cont_x > valor_mayor and posicion_x_final < valor_menor):
-                                                        if (y_aux < y_aux_arriba):
-                                                            y_aux_arriba=y_aux
-                                                
-                                                else:
-                                                    if (posicion_x_final > valor_mayor and cont_x < valor_menor):
-                                                        if (y_aux < y_aux_arriba):
-                                                            y_aux_arriba=y_aux
-
-
-                                                if ( valor_menor < cont_x and cont_x < valor_mayor  ):
-                                                    if (y_aux > y_aux_abajo):
-                                                        y_aux_abajo=y_aux
-                                            
-                                        contador+=1
-
-                                    print ('y_aux_arriba: '+ str (y_aux_arriba) + ' y_aux_abajo: '+ str(y_aux_abajo))
-                                    if (y_aux_arriba==0):
-                                        if (y_aux_abajo==-100):
-                                            cont_y=-1
-                                        else:
-                                            cont_y=y_aux_abajo/2
-
-                                    else:
-                                        if (y_aux_abajo==-100):
-                                            cont_y=y_aux_arriba - 0.5 #Dividimos entre dos para asegurarnos de que no sea negativo 
-                                        else:
-                                            cont_y= (y_aux_arriba + y_aux_abajo)/2  
-
+                                    
+                                    cont_y=-1
                                     y_abajo.append(cont_y)
 
                                     punto=[cont_x, y_abajo[len(y_abajo)-1]]
                                     puntos_aux.append(punto)
                                     puntos_aux.append(punto)
-                                    x_abajo.append(cont_x)
-                                    x_abajo.append(posicion_x_final)
-                                    punto=[x_abajo[len(x_abajo)-1], y_abajo[len(y_abajo)-1]]
-                                    puntos_aux.append(punto)
-                                    puntos_aux.append(punto)
-                                    cont_x=posicion_x_final
-                                    if (signo=='Pos'): #Es decir, si pasamos por un cruce superior 
-                                        cont_y=0
-                                        punto=[cont_x,cont_y]
-                                    else:
-                                        cont_y=0.1  #Es decir ponemos que se continúe a partir del 0.1 pero metemos en los puntos el -0.1
-                                        punto=[cont_x, -0.1]
-                                        
-                                    puntos_aux.append(punto)  
-
-                                else:                       #En caso de que ya haya algún y_abajo y haya que volver. 
-                                    print('y_abajo_par')
-
-                                    darVuelta=False
-                                    contador=0
-                                    for x_aux in x_abajo:
-                                        if ((contador % 2)==0):
-                                            aux1=x_aux
-                                        if ((contador % 2)==1):
-                                            if (aux1 > x_aux):
-                                                x_mayor=aux1
-                                                x_menor=x_aux
-
-                                            else:
-                                                x_mayor=x_aux
-                                                x_menor=aux1
-
-                                            if (cont_x < x_menor or cont_x > x_mayor):
-                                                if (x_menor < posicion_x_final and posicion_x_final < x_mayor):
-                                                    darVuelta=True
-                                            
-
-                                            
-                                        contador+=1
-                                    
-                                    if (darVuelta==True):   #Esto es para reutilizar código
-                                        posicion_relativa_x=posicion_x_final
-                                        posicion_x_final=-1 #Dado que vamos a dar la vuelta 
-
-                                    
-
-
-
-                                    contador=0
-                                    punto=[cont_x, cont_y]
-                                    puntos_aux.append(punto)
-                                    
-
-                                    y_aux_abajo=-100
-                                    y_aux_arriba=0
-
-                                    for x_aux in x_abajo:
-                                        if ((contador % 2)==0):
-                                            aux1=x_aux
-                                        if ((contador % 2)==1):
-                                            if (x_aux>aux1):
-                                                print ('cont_x: '+ str(cont_x) + ' aux1: '+ str(aux1) + ' x_aux: '+ str(x_aux))
-                                                if (cont_x>aux1 and cont_x < x_aux ):
-                                                    if ( y_abajo[int((contador-1)/2)] > y_aux_abajo):
-                                                        y_aux_abajo=y_abajo[int((contador-1)/2)]
-                                            else:
-                                                print ('cont_x: '+ str(cont_x)  + ' x_aux: '+ str(x_aux)+ ' aux1: '+ str(aux1))
-                                                if (cont_x>x_aux and cont_x < aux1 ):
-                                                    if ( y_abajo[int((contador-1)/2)] > y_aux_abajo):
-                                                        y_aux_abajo=y_abajo[int((contador-1)/2)]
-                                                    
-                                            if (cont_x > posicion_x_final):
-                                                if (aux1 > posicion_x_final and aux1 < cont_x):
-                                                    if ( y_abajo[int((contador-1)/2)] < y_aux_arriba):
-                                                        y_aux_arriba=y_abajo[int((contador-1)/2)]
-                                            else:
-                                                if (aux1 > cont_x and aux1 < posicion_x_final):
-                                                    if ( y_abajo[int((contador-1)/2)] < y_aux_arriba):
-                                                        y_aux_arriba=y_abajo[int((contador-1)/2)]
-
-                                            
-                                        contador+=1
-                                    
-
-                                    contador=0
-                                    for y_aux in y_lista_fuera_raiz:
-                                        if (y_aux < 0):
-                                            if (cont_y <= y_aux):
-                                                if (x_lista_fuera_raiz[2*contador] < x_lista_fuera_raiz[2*contador + 1]):
-                                                    if ( x_lista_fuera_raiz[2*contador] < cont_x and cont_x < x_lista_fuera_raiz[2*contador + 1]  ):
-                                                        if (y_aux < y_aux_arriba):
-                                                            y_aux_arriba=y_aux
-                                                else:
-                                                    if ( x_lista_fuera_raiz[2*contador] > cont_x and cont_x > x_lista_fuera_raiz[2*contador + 1]  ):
-                                                        if (y_aux < y_aux_arriba):
-                                                            y_aux_arriba=y_aux
-                                            else:
-                                                if (x_lista_fuera_raiz[2*contador] < x_lista_fuera_raiz[2*contador + 1]):
-                                                    if ( x_lista_fuera_raiz[2*contador] < cont_x and cont_x < x_lista_fuera_raiz[2*contador + 1]  ):
-                                                        if (y_aux > y_aux_abajo):
-                                                            y_aux_abajo=y_aux
-                                                else:
-                                                    if ( x_lista_fuera_raiz[2*contador] > cont_x and cont_x > x_lista_fuera_raiz[2*contador + 1]  ):
-                                                        if (y_aux > y_aux_abajo):
-                                                            y_aux_abajo=y_aux
-
-                                        contador+=1
-
-                                    print ('y_aux_arriba: ' + str (y_aux_arriba))
-                                    print ('y_aux_abajo: '+ str(y_aux_abajo))
-
-
-                                    if (y_aux_arriba==0):
-                                        if (y_aux_abajo==-100):
-                                            cont_y=-1
+                                    if (problema_choque==True):
+                                        problema_choque=False
+                                        if ( abs(cont_x- x_maximo)>1):
+                                            posicion_final_x=-1 #Dado que vamos a dar la vuelta por la izquierda del nudo 
                                         else:
-                                            cont_y=y_aux_abajo/2
-
-                                    else:
-                                        if (y_aux_abajo==-100):
-                                            cont_y=y_aux_arriba - 0.5 #Dividimos entre dos para asegurarnos de que no sea negativo 
-                                        else:
-                                            cont_y= (y_aux_arriba + y_aux_abajo)/2  
-
-
+                                            posicion_final_x=(x_maximo+0.5)
                                         
-                                    y_abajo.append(cont_y)
-                                    punto=[cont_x, cont_y]
-                                    puntos_aux.append(punto)
-                                    puntos_aux.append(punto)
-                                    x_abajo.append(cont_x)
-                                    x_abajo.append(posicion_x_final)
-                                    cont_x=posicion_x_final
-                                    punto=[cont_x, cont_y]
-                                    puntos_aux.append(punto)
-                                    puntos_aux.append(punto)
-
-                                    if (darVuelta==True):
+                                        x_abajo.append(cont_x)
+                                        x_abajo.append(posicion_final_x)
+                                        punto=[posicion_final_x, cont_y]
+                                        puntos_aux.append(punto)
+                                        puntos_aux.append(punto)
                                         maximo=0
                                         for y_ar in y_arriba:
                                             if (y_ar > maximo):
@@ -4201,437 +5165,1074 @@ class Nudo:
                                         
                                         maximo+=0.5
                                         cont_y=maximo
-                                        punto=[cont_x, cont_y]
+                                        punto=[posicion_final_x, cont_y]
                                         puntos_aux.append(punto)
                                         puntos_aux.append(punto)
-
                                         y_arriba.append(maximo)
-                                        x_arriba.append(cont_x)
-                                        x_arriba.append(posicion_relativa_x)
+                                        x_arriba.append(posicion_final_x)
+                                        x_arriba.append(posicion_x_final)
 
-                                        cont_x=posicion_relativa_x
+                                        cont_x=posicion_x_final
                                         punto=[cont_x, cont_y]
                                         puntos_aux.append(punto)
                                         puntos_aux.append(punto)
-                                        print('DA VUELTA par')
-                                        abajo=True
-                                    
-                                    if (signo=='Neg'): #Es decir, si el cruce es inferior
-                                        if (darVuelta==False):
-                                            punto=[cont_x, -0.1]
-                                            cont_y=0.1
-                                        else:
+                                        arriba=False #Ya que vamos a seguir estando abajo
+                                        
+                                        if (signo=='Neg'): #Es decir, si el cruce es inferior
                                             punto=[cont_x, 0.1]
                                             cont_y=-0.1
-                                        puntos_aux.append(punto)
-                                        
+                                            puntos_aux.append(punto)
+                                            
+                                        else:
+                                            cont_y=0
+                                            punto=[cont_x, cont_y]
+                                            puntos_aux.append(punto)
+
                                     else:
-                                        cont_y=0
+                                        x_abajo.append(cont_x)
+                                        x_abajo.append(posicion_x_final)
+                                        punto=[x_abajo[len(x_abajo)-1], y_abajo[len(y_abajo)-1]]
+                                        puntos_aux.append(punto)
+                                        puntos_aux.append(punto)
+                                        cont_x=posicion_x_final
+                                        if (signo=='Pos'): #Es decir, si pasamos por un cruce superior 
+                                            cont_y=0
+                                            punto=[cont_x,cont_y]
+                                        else:
+                                            cont_y=0.1  #Es decir ponemos que se continúe a partir del 0.1 pero metemos en los puntos el -0.1
+                                            punto=[cont_x, -0.1]
+                                            
+                                        puntos_aux.append(punto)  
+
+                                else:                       #En caso de que ya haya algún y_abajo, volver==True y el valor asociado esté en la raiz principal. 
+
+                                    if (puntos_aux[len(puntos_aux)-2][1]<cont_y):
                                         punto=[cont_x, cont_y]
                                         puntos_aux.append(punto)
+                                        y_intermedia=cont_y/2
+                                        punto=[cont_x, y_intermedia]
+                                        puntos_aux.append(punto)
+                                        puntos_aux.append(punto)
+                                        cont_x=posicion_x_final
+                                        punto=[cont_x, y_intermedia]
+                                        puntos_aux.append(punto)
+                                        puntos_aux.append(punto)
+                                        if (signo=='Neg'): #Es decir, si el cruce es inferior
+                                            punto=[cont_x, -0.1]
+                                            cont_y=0.1
+                                            puntos_aux.append(punto)
+                                            
+                                        else:
+                                            cont_y=0
+                                            punto=[cont_x, cont_y]
+                                            puntos_aux.append(punto)
+
+                                    else:
+                                        darVuelta=False
+                                        if (problema_choque==True): #Es decir , si estamos volviendo para atrás 
+                                            darVuelta=True
+                                        contador=0
+                                        for x_aux in x_abajo:
+                                            if ((contador % 2)==0):
+                                                aux1=x_aux
+                                            if ((contador % 2)==1):
+                                                if (aux1 > x_aux):
+                                                    x_mayor=aux1
+                                                    x_menor=x_aux
+
+                                                else:
+                                                    x_mayor=x_aux
+                                                    x_menor=aux1
+
+                                                if (cont_x < x_menor or cont_x > x_mayor):
+                                                    if (x_menor < posicion_x_final and posicion_x_final < x_mayor):
+                                                        darVuelta=True
+                                                
+                                                if ((x_menor < cont_x and cont_x < x_mayor) and (posicion_x_final < x_menor or posicion_x_final > x_mayor)):
+                                                    if (cont_y> y_abajo[int((contador-1)/2)]):
+                                                        problema_choque=True
+                                                
+                                            contador+=1
+
+                                        contador=0
+                                        for y_aux in y_lista_fuera_raiz:
+                                            if (y_aux < 0):
+                                                if (x_lista_fuera_raiz[2*contador] < x_lista_fuera_raiz[2*contador + 1]):
+                                                    x_menor=x_lista_fuera_raiz[2*contador]
+                                                    x_mayor=x_lista_fuera_raiz[2*contador + 1]
+                                                else:
+                                                    x_mayor=x_lista_fuera_raiz[2*contador]
+                                                    x_menor=x_lista_fuera_raiz[2*contador + 1]
+                                                
+                                                if (cont_x < x_menor or cont_x > x_mayor):
+                                                    if (x_menor < posicion_x_final and posicion_x_final < x_mayor):
+                                                        darVuelta=True
+
+                                                if ((x_menor < cont_x and cont_x < x_mayor) and (posicion_x_final < x_menor or posicion_x_final > x_mayor)):
+                                                    if (cont_y> y_aux):
+                                                        problema_choque=True
+                                            contador+=1
                                         
-                                    
+                                        if (darVuelta==True): #Tenemos que comprobar si se puede dar la vuelta o no, es decir, si va a chocar con las aristas inferiores
+                                            problema_choque=False
+                                            contador=0      #Para comparar cuando tengamos los dos puntos de la arista 
+                                            
+                                            for x_aux in x_arriba:
+                                                if ((contador % 2)==0):
+                                                    aux1=x_aux
+                                                if ((contador % 2)==1):
+                                                    if (aux1 > x_aux):
+                                                        x_mayor=aux1
+                                                        x_menor=x_aux
+
+                                                    else:
+                                                        x_mayor=x_aux
+                                                        x_menor=aux1
+
+                                                    if ((x_menor < posicion_x_final and posicion_x_final < x_mayor) and (x_menor>-0.5 and x_mayor < x_maximo)):
+                                                        problema_choque=True
+                                                                                            
+                                                contador+=1
+                                            
+                                            contador=0
+                                            for y_aux in y_lista_fuera_raiz:
+                                                if (y_aux > 0):
+                                                    if (x_lista_fuera_raiz[2*contador] < x_lista_fuera_raiz[2*contador + 1]):
+                                                        x_menor=x_lista_fuera_raiz[2*contador]
+                                                        x_mayor=x_lista_fuera_raiz[2*contador + 1]
+                                                    else:
+                                                        x_mayor=x_lista_fuera_raiz[2*contador]
+                                                        x_menor=x_lista_fuera_raiz[2*contador + 1]
+                                                    
+                                                    if (x_menor < posicion_x_final and posicion_x_final < x_mayor):
+                                                        problema_choque=True
+                                                contador+=1
+                                            
+                                            
+                                        if (problema_choque==False):
+
+                                            if (darVuelta==True):   #Esto es para reutilizar código
+                                                posicion_relativa_x=posicion_x_final
+                                                if ( abs(cont_x- x_maximo)>1):
+                                                    
+                                                    
+                                                        
+                                                    contador=0
+                                                    minimo=-100
+                                                    maximo=-0.5
+                                                    for x_aux in x_arriba:
+                                                        if x_aux < 0:
+                                                            if (contador %2==0):
+                                                                if (x_arriba[contador+1] > posicion_x_final) :
+                                                                    if (minimo < x_aux):
+                                                                        minimo=x_aux
+                                                                else:
+                                                                    if (maximo > x_aux):
+                                                                        maximo=x_aux
+                                                            else:
+                                                                if (x_arriba[contador-1] > posicion_x_final) :
+                                                                    if (minimo < x_aux):
+                                                                        minimo=x_aux
+                                                                else:
+                                                                    if (maximo > x_aux):
+                                                                        maximo=x_aux
+                                                        contador+=1
+                                                    
+                                                    contador=0
+                                                    for x_aux in x_lista_fuera_raiz:
+                                                        if x_aux < 0:
+                                                            if (contador % 2==0):
+                                                                if (y_lista_fuera_raiz[int(contador/2)] > 0):
+                                                                    if (x_lista_fuera_raiz[contador+1] > posicion_x_final) :
+                                                                        if (minimo < x_aux):
+                                                                            minimo=x_aux
+                                                                    else:
+                                                                        if (maximo > x_aux):
+                                                                            maximo=x_aux
+                                                            else:
+                                                                if (y_lista_fuera_raiz[int((contador-1)/2)] > 0):
+                                                                    if (x_lista_fuera_raiz[contador-1] > posicion_x_final) :
+                                                                        if (minimo < x_aux):
+                                                                            minimo=x_aux
+                                                                    else:
+                                                                        if (maximo > x_aux):
+                                                                            maximo=x_aux
+                                                        contador+=1
+
+
+                                                    
+                                                    if (minimo==-100):
+                                                        posicion_x_final=(maximo-0.5)
+                                                    else:
+                                                        posicion_x_final=(minimo+maximo)/2
+
+                                                    
+                                                else:
+                                                    posicion_x_final=(x_maximo+0.5)
+
+                                            
+
+
+
+                                            contador=0
+                                            punto=[cont_x, cont_y]
+                                            puntos_aux.append(punto)
+                                            
+
+                                            y_aux_abajo=-100
+                                            y_aux_arriba=0
+
+                                            for x_aux in x_abajo:
+                                                if ((contador % 2)==0):
+                                                    aux1=x_aux
+                                                if ((contador % 2)==1):
+                                                    if (x_aux>aux1):
+                                                        if (cont_x>aux1 and cont_x < x_aux ):
+                                                            if (cont_y > y_abajo[int((contador-1)/2)]):
+                                                                if ( y_abajo[int((contador-1)/2)] > y_aux_abajo):
+                                                                    y_aux_abajo=y_abajo[int((contador-1)/2)]
+                                                    else:
+                                                        if (cont_x>x_aux and cont_x < aux1 ):
+                                                            if (cont_y > y_abajo[int((contador-1)/2)]):
+                                                                if ( y_abajo[int((contador-1)/2)] > y_aux_abajo):
+                                                                    y_aux_abajo=y_abajo[int((contador-1)/2)]
+                                                            
+                                                    if (cont_x > posicion_x_final):
+                                                        if (aux1 > posicion_x_final and aux1 < cont_x):
+                                                            if ( y_abajo[int((contador-1)/2)] < y_aux_arriba):
+                                                                y_aux_arriba=y_abajo[int((contador-1)/2)]
+                                                    else:
+                                                        if (aux1 > cont_x and aux1 < posicion_x_final):
+                                                            if ( y_abajo[int((contador-1)/2)] < y_aux_arriba):
+                                                                y_aux_arriba=y_abajo[int((contador-1)/2)]
+
+                                                    
+                                                contador+=1
+                                            
+
+                                            contador=0
+                                            for y_aux in y_lista_fuera_raiz:
+                                                if (y_aux < 0):
+                                                    if (cont_y <= y_aux):
+                                                        if (x_lista_fuera_raiz[2*contador] < x_lista_fuera_raiz[2*contador + 1]):
+                                                            if ( x_lista_fuera_raiz[2*contador] < cont_x and cont_x < x_lista_fuera_raiz[2*contador + 1]  ):
+                                                                if (y_aux < y_aux_arriba):
+                                                                    y_aux_arriba=y_aux
+                                                        else:
+                                                            if ( x_lista_fuera_raiz[2*contador] > cont_x and cont_x > x_lista_fuera_raiz[2*contador + 1]  ):
+                                                                if (y_aux < y_aux_arriba):
+                                                                    y_aux_arriba=y_aux
+                                                    else:
+                                                        if (x_lista_fuera_raiz[2*contador] < x_lista_fuera_raiz[2*contador + 1]):
+                                                            if ( x_lista_fuera_raiz[2*contador] < cont_x and cont_x < x_lista_fuera_raiz[2*contador + 1]  ):
+                                                                if (y_aux > y_aux_abajo):
+                                                                    y_aux_abajo=y_aux
+                                                            
+                                                            if ( posicion_x_final < x_lista_fuera_raiz[2*contador]   and cont_x > x_lista_fuera_raiz[2*contador + 1] ):
+                                                                if (y_aux < y_aux_arriba):
+                                                                    y_aux_arriba=y_aux
+
+                                                            if ( cont_x < x_lista_fuera_raiz[2*contador]   and posicion_x_final > x_lista_fuera_raiz[2*contador + 1] ):
+                                                                if (y_aux < y_aux_arriba):
+                                                                    y_aux_arriba=y_aux
+
+                                                        else:
+                                                            if ( x_lista_fuera_raiz[2*contador] > cont_x and cont_x > x_lista_fuera_raiz[2*contador + 1]  ):
+                                                                if (y_aux > y_aux_abajo):
+                                                                    y_aux_abajo=y_aux
+                                                            
+                                                            if ( posicion_x_final < x_lista_fuera_raiz[2*contador+1]   and cont_x > x_lista_fuera_raiz[2*contador ] ):
+                                                                if (y_aux < y_aux_arriba):
+                                                                    y_aux_arriba=y_aux
+
+                                                            if ( cont_x < x_lista_fuera_raiz[2*contador+1]   and posicion_x_final > x_lista_fuera_raiz[2*contador] ):
+                                                                if (y_aux < y_aux_arriba):
+                                                                    y_aux_arriba=y_aux
+
+                                                contador+=1
+
+
+                                            if (y_aux_arriba==0):
+                                                if (y_aux_abajo==-100):
+                                                    cont_y=-1
+                                                else:
+                                                    cont_y=y_aux_abajo/2
+
+                                            else:
+                                                if (y_aux_abajo==-100):
+                                                    cont_y=y_aux_arriba - 0.5 #Dividimos entre dos para asegurarnos de que no sea negativo 
+                                                else:
+                                                    cont_y= (y_aux_arriba + y_aux_abajo)/2  
+
+
+                                                
+                                            y_abajo.append(cont_y)
+                                            punto=[cont_x, cont_y]
+                                            puntos_aux.append(punto)
+                                            puntos_aux.append(punto)
+                                            x_abajo.append(cont_x)
+                                            x_abajo.append(posicion_x_final)
+                                            cont_x=posicion_x_final
+                                            punto=[cont_x, cont_y]
+                                            puntos_aux.append(punto)
+                                            puntos_aux.append(punto)
+
+                                            if (darVuelta==True):
+                                                maximo=0
+                                                for y_ar in y_arriba:
+                                                    if (y_ar > maximo):
+                                                        maximo=y_ar
+                                                
+                                                for y_ar in y_lista_fuera_raiz:
+                                                    if (y_ar > maximo):
+                                                        maximo=y_ar
+                                                
+                                                maximo+=0.5
+                                                cont_y=maximo
+                                                punto=[cont_x, cont_y]
+                                                puntos_aux.append(punto)
+                                                puntos_aux.append(punto)
+
+                                                y_arriba.append(maximo)
+                                                x_arriba.append(cont_x)
+                                                x_arriba.append(posicion_relativa_x)
+
+                                                cont_x=posicion_relativa_x
+                                                punto=[cont_x, cont_y]
+                                                puntos_aux.append(punto)
+                                                puntos_aux.append(punto)
+                                                arriba=False #Ya que vamos a seguir estando abajo
+                                            
+                                            if (signo=='Neg'): #Es decir, si el cruce es inferior
+                                                if (darVuelta==False):
+                                                    punto=[cont_x, -0.1]
+                                                    cont_y=0.1
+                                                else:
+                                                    punto=[cont_x, 0.1]
+                                                    cont_y=-0.1
+                                                puntos_aux.append(punto)
+                                                
+                                            else:
+                                                cont_y=0
+                                                punto=[cont_x, cont_y]
+                                                puntos_aux.append(punto)
+                                                
+                                        
                     lista2.append(cont_x)
                 
-            values = ','.join(str(v) for v in puntos_aux)
-                                
-            print ('Puntos nuevos: ' + values)
-            lista.append(num_analizado)
-            num_analizado+=1
 
-
-
-        values = ','.join(str(v) for v in puntos_aux)
-                            
-        print ('Puntos nuevos: ' + values)
-
-        print(str(len(self.__numeros)))
-    
-
-
-        print('Ultimo punto')
-        punto=[cont_x, cont_y]
-        puntos_aux.append(punto)
-        posicion_x_final=-0.5 #Dado que es el ultimo punto
-        contador=0
-
-        if (lista[len(lista)-1] in self.__numeros):   #Tomamos su valor asociado
-            vasoc=2*self.__numeros.index(lista[len(lista)-1])+1
-        else:
-            vasoc=2*self.__numeros.index(- lista[len(lista)-1])+1
-
-        if (vasoc in lista_fuera_raiz):
-            y_fuera_raiz=y_lista_fuera_raiz[lista_fuera_raiz.index(vasoc)]
-            x1_fuera_raiz=x_lista_fuera_raiz[2*lista_fuera_raiz.index(vasoc)]
-            x2_fuera_raiz=x_lista_fuera_raiz[2*lista_fuera_raiz.index(vasoc) + 1]
-
-
-            print('ULTIMAA')
             
-            print ('x_abajo: ')
-            print(x_abajo)
-            print('y_abajo: ')
-            print(y_abajo)
-            print('x_arriba')
-            print(x_arriba)
-            print('y_arriba')
-            print(y_arriba)
-            print('lista')
-            print(lista)
-            print('lista2')
-            print(lista2)
-            print('x_lista_fuera_raiz')
-            print(x_lista_fuera_raiz)
-            print('y_lista_fuera_raiz')
-            print(y_lista_fuera_raiz)
-            print('lista_fuera_raiz')
-            print(lista_fuera_raiz)
-            print (lista[len(lista)-1])
             
-            if (y_fuera_raiz<0):
+
+            if (problema_choque==False):            #En caso de que no haya que aplicar recursividad
+                lista.append(num_analizado)
+                num_analizado+=1
+                indices_ultimos_puntos.append(len(puntos_aux))
+                y_arriba_analizados.append(copy.deepcopy(y_arriba))
+                y_abajo_analizados.append(copy.deepcopy(y_abajo))
+                x_arriba_analizados.append(copy.deepcopy(x_arriba))
+                x_abajo_analizados.append(copy.deepcopy(x_abajo))
+
+                y_lista_fuera_raiz_analizados.append(copy.deepcopy(y_lista_fuera_raiz))
+                x_lista_fuera_raiz_analizados.append(copy.deepcopy(x_lista_fuera_raiz))
+                lista_fuera_raiz_analizados.append(copy.deepcopy(lista_fuera_raiz))
+                y_lista_fuera_raiz_altura_analizados.append(copy.deepcopy(y_lista_fuera_raiz_altura))
+
+                y_lista_intermedia_analizados.append(copy.deepcopy(y_lista_intermedia))
+                x_arriba_lista_intermedia_analizados.append(copy.deepcopy(x_arriba_lista_intermedia))
+                x_abajo_lista_intermedia_analizados.append(copy.deepcopy(x_abajo_lista_intermedia))
+                lista_analizados.append(copy.deepcopy(lista))
+                lista2_analizados.append(copy.deepcopy(lista2))
+                arriba_analizados.append(copy.deepcopy(arriba))
+                raiz_principal_analizados.append(copy.deepcopy(raiz_principal))
+                acabar_aniadir_nuevo_cruce_analizados.append(copy.deepcopy(acabar_aniadir_nuevo_cruce))
+                cont_x_analizados.append(cont_x)
+                cont_y_analizados.append(cont_y)
+
+            else:               #En caso de que haya que aplicar recursividad
                 
-                if (puntos_aux[len(puntos_aux)-3][1] <= cont_y): #Es decir si venimos de un camino en vertical hacia arriba
-                    y_aux_abajo=-100
-                    y_aux_arriba=0
-                    for x_aux in x_abajo:
-                        if ((contador % 2)==0):
-                            aux1=x_aux
-                        if ((contador % 2)==1):
-                            print ('x1_fuera_raiz: '+ str(x1_fuera_raiz) + ' x2_fuera_raiz: '+ str(x2_fuera_raiz) + ' aux1: '+ str(aux1) + ' x_aux: '+ str(x_aux))
-                            if (x_aux>aux1):
-                                if (x1_fuera_raiz>aux1 and x1_fuera_raiz < x_aux ):
-                                    if ( y_abajo[int((contador-1)/2)] > y_aux_abajo):
-                                        y_aux_abajo=y_abajo[int((contador-1)/2)]
-                            else:
-                                if (x1_fuera_raiz>x_aux and x1_fuera_raiz < aux1 ):
-                                    if ( y_abajo[int((contador-1)/2)] > y_aux_abajo):
-                                        y_aux_abajo=y_abajo[int((contador-1)/2)]
-                                    
-                            if (x1_fuera_raiz > x2_fuera_raiz):
-                                print ('contador: '+ str (contador))
-                                if (aux1 > x2_fuera_raiz and aux1 < x1_fuera_raiz):
-                                    if ( y_abajo[int((contador-1)/2)] < y_aux_arriba):
-                                        if (y_abajo[int((contador-1)/2)]>y_fuera_raiz):
-                                            y_aux_arriba=y_abajo[int((contador-1)/2)]
-                            else:
-                                if (aux1 > x1_fuera_raiz and aux1 < x2_fuera_raiz):
-                                    if ( y_abajo[int((contador-1)/2)] < y_aux_arriba):
-                                        if (y_abajo[int((contador-1)/2)]> y_fuera_raiz):
-                                            y_aux_arriba=y_abajo[int((contador-1)/2)]
+                contador=-1
+                finalizado=False
+                while (finalizado==False):
+                    contador+=1
+                    if ((len(indices_ultimos_puntos)-contador) not in indices_ultimos_puntos_analizados):
+                        finalizado=True
+                
+
+                indices_ultimos_puntos_analizados.append((len(indices_ultimos_puntos)-contador))
+
+                for i in range(len(puntos_aux)-indices_ultimos_puntos[len(indices_ultimos_puntos)-contador-2]):
+                    puntos_aux.pop()
+                
+
+                for j in range(contador+1):
+                    indices_ultimos_puntos.pop()
+                    y_arriba_analizados.pop()
+                    y_abajo_analizados.pop()
+                    x_arriba_analizados.pop()
+                    x_abajo_analizados.pop()
+
+                    y_lista_fuera_raiz_analizados.pop()
+                    x_lista_fuera_raiz_analizados.pop()
+                    lista_fuera_raiz_analizados.pop()
+                    y_lista_fuera_raiz_altura_analizados.pop()
+
+                    y_lista_intermedia_analizados.pop()
+                    x_arriba_lista_intermedia_analizados.pop()
+                    x_abajo_lista_intermedia_analizados.pop()
+                    lista_analizados.pop()
+                    lista2_analizados.pop()
+                    arriba_analizados.pop()
+                    raiz_principal_analizados.pop()
+                    acabar_aniadir_nuevo_cruce_analizados.pop()
+                    cont_x_analizados.pop()
+                    cont_y_analizados.pop()
+
+                    
+                indice=len(y_arriba_analizados)-1
+
+                y_arriba=y_arriba_analizados[indice]
+                y_abajo=y_abajo_analizados[indice]
+                x_arriba=x_arriba_analizados[indice]
+                x_abajo=x_abajo_analizados[indice]
+
+                y_lista_fuera_raiz=y_lista_fuera_raiz_analizados[indice]
+                x_lista_fuera_raiz=x_lista_fuera_raiz_analizados[indice]
+                lista_fuera_raiz=lista_fuera_raiz_analizados[indice]
+                y_lista_fuera_raiz_altura=y_lista_fuera_raiz_altura_analizados[indice]
+
+                y_lista_intermedia=y_lista_intermedia_analizados[indice]
+                x_arriba_lista_intermedia=x_arriba_lista_intermedia_analizados[indice]
+                x_abajo_lista_intermedia=x_abajo_lista_intermedia_analizados[indice]
+                lista=lista_analizados[indice]
+                lista2=lista2_analizados[indice]
+                arriba=arriba_analizados[indice]
+                raiz_principal=raiz_principal_analizados[indice]
+                acabar_aniadir_nuevo_cruce=acabar_aniadir_nuevo_cruce_analizados[indice]
+                cont_x=cont_x_analizados[indice]
+                cont_y=cont_y_analizados[indice]
+
+
+
+                num_analizado-=(contador+1)
+
+
+
+        if (len(self.__numeros)>0):     #Para eliminar el caso del nudo trivial
+            #Vamos a volver ya al punto inicial del nudo
+            punto=[cont_x, cont_y]
+            puntos_aux.append(punto)
+            posicion_x_final=-0.5 #Dado que es el ultimo punto
+            contador=0
+
+            if (lista[len(lista)-1] in self.__numeros):   #Tomamos su valor asociado del último valor que hemos introducido
+                vasoc=2*self.__numeros.index(lista[len(lista)-1])+1
+            else:
+                vasoc=2*self.__numeros.index(- lista[len(lista)-1])+1
+
+            if (vasoc in lista_fuera_raiz):                #Si está en un cruce que no está en la raiz principal
+                y_fuera_raiz=y_lista_fuera_raiz[lista_fuera_raiz.index(vasoc)]
+                x1_fuera_raiz=x_lista_fuera_raiz[2*lista_fuera_raiz.index(vasoc)]
+                x2_fuera_raiz=x_lista_fuera_raiz[2*lista_fuera_raiz.index(vasoc) + 1]
+
+                
+                if (y_fuera_raiz<0):
+                    
+                    if (puntos_aux[len(puntos_aux)-3][1] <= cont_y): #Es decir si venimos de un camino en vertical hacia arriba
+                        y_aux_abajo=-100
+                        y_aux_arriba=0
+                        for x_aux in x_abajo:
+                            if ((contador % 2)==0):
+                                aux1=x_aux
+                            if ((contador % 2)==1):
+                                if (x_aux>aux1):
+                                    if (x1_fuera_raiz>aux1 and x1_fuera_raiz < x_aux ):
+                                        if ( y_abajo[int((contador-1)/2)] > y_aux_abajo):
+                                            y_aux_abajo=y_abajo[int((contador-1)/2)]
+                                else:
+                                    if (x1_fuera_raiz>x_aux and x1_fuera_raiz < aux1 ):
+                                        if ( y_abajo[int((contador-1)/2)] > y_aux_abajo):
+                                            y_aux_abajo=y_abajo[int((contador-1)/2)]
                                         
-                        contador+=1
-                        print ('y_aux_arriba: '+ str(y_aux_arriba)) 
-                        print ('y_aux_abajo: '+ str(y_aux_abajo))       
-                        if (puntos_aux[len(puntos_aux)-3][1] > cont_y): #Es decir si venimos de un camino en vertical hacia abajo
-                            print('ENTRAAA')
-                            if (y_aux_abajo==-100):
-                                cont_y=y_fuera_raiz-0.5
-                            else:
-                                cont_y=(y_fuera_raiz+y_aux_abajo)/2
-
-                        else:        
+                                if (x1_fuera_raiz > x2_fuera_raiz):
+                                    if (aux1 > x2_fuera_raiz and aux1 < x1_fuera_raiz):
+                                        if ( y_abajo[int((contador-1)/2)] < y_aux_arriba):
+                                            if (y_abajo[int((contador-1)/2)]>y_fuera_raiz):
+                                                y_aux_arriba=y_abajo[int((contador-1)/2)]
+                                else:
+                                    if (aux1 > x1_fuera_raiz and aux1 < x2_fuera_raiz):
+                                        if ( y_abajo[int((contador-1)/2)] < y_aux_arriba):
+                                            if (y_abajo[int((contador-1)/2)]> y_fuera_raiz):
+                                                y_aux_arriba=y_abajo[int((contador-1)/2)]
+                                            
+                            contador+=1
+        
+                                
                             cont_y=(y_fuera_raiz+y_aux_arriba)/2
+                
+
+                    else:        #Es decir si venimos de un camino en vertical hacia abajo
+                        contador=0
+                        y_aux_abajo=-100
+                        y_aux_arriba=0
+                        for x_aux in x_abajo:
+                            if ((contador % 2)==0):
+                                aux1=x_aux
+                            if ((contador % 2)==1):
+                                if (x_aux>aux1):
+                                    if ((x1_fuera_raiz>aux1 and x1_fuera_raiz < x_aux) and (posicion_x_final >= aux1 and posicion_x_final <= x_aux) ):
+                                        if (y_abajo[int((contador-1)/2)] < cont_y):
+                                            if ( y_abajo[int((contador-1)/2)] > y_aux_abajo):
+                                                y_aux_abajo=y_abajo[int((contador-1)/2)]
+                                else:
+                                    if ((x1_fuera_raiz>x_aux and x1_fuera_raiz < aux1 ) and (posicion_x_final >= x_aux and posicion_x_final <= aux1)):
+                                        if (y_abajo[int((contador-1)/2)] < cont_y):
+                                            if ( y_abajo[int((contador-1)/2)] > y_aux_abajo):
+                                                y_aux_abajo=y_abajo[int((contador-1)/2)]
+
+                                if (x_aux>aux1):
+                                    if (cont_x>x_aux and posicion_x_final < aux1 ):
+                                        if ( y_abajo[int((contador-1)/2)] < y_aux_arriba):
+                                            y_aux_arriba=y_abajo[int((contador-1)/2)]
+                                    
+                                    if (cont_x < aux1 and posicion_x_final > x_aux):
+                                        if ( y_abajo[int((contador-1)/2)] < y_aux_arriba):
+                                            y_aux_arriba=y_abajo[int((contador-1)/2)]
+                                
+                                else:
+                                    if (cont_x>aux1 and posicion_x_final < x_aux ):
+                                        if ( y_abajo[int((contador-1)/2)] < y_aux_arriba):
+                                            y_aux_arriba=y_abajo[int((contador-1)/2)]
+                                    
+                                    if (cont_x < x_aux and posicion_x_final > aux1):
+                                        if ( y_abajo[int((contador-1)/2)] < y_aux_arriba):
+                                            y_aux_arriba=y_abajo[int((contador-1)/2)]
+
+                            contador+=1
+
+                        if (y_aux_arriba< cont_y):
+                            if (y_aux_abajo==-100):
+                                cont_y = y_aux_arriba -0.5
+                            else:
+                                cont_y=(y_aux_arriba+y_aux_abajo)/2
+                        else:
+                            if (y_aux_abajo==-100):
+                                cont_y-=0.5
+                            else:
+                                cont_y=(cont_y+y_aux_abajo)/2
+
+
+
+                            
+
+
+                
+                else:           #Si y_fuera_raiz > 0
+                    if (puntos_aux[len(puntos_aux)-3][1] >= cont_y):     #Es decir si venimos de un camino en vertical hacia abajo
+                        contador=0
+                        y_aux_arriba=100
+                        y_aux_abajo=0
+                        for x_aux in x_arriba:
+                            if ((contador % 2)==0):
+                                aux1=x_aux
+                            if ((contador % 2)==1):
+                                if (x_aux>aux1):
+                                    if (x1_fuera_raiz>aux1 and x1_fuera_raiz < x_aux ):
+                                        if ( y_arriba[int((contador-1)/2)] < y_aux_arriba):
+                                            y_aux_arriba=y_arriba[int((contador-1)/2)]
+                                else:
+                                    if (x1_fuera_raiz>x_aux and x1_fuera_raiz < aux1 ):
+                                        if ( y_arriba[int((contador-1)/2)] < y_aux_arriba):
+                                            y_aux_arriba=y_arriba[int((contador-1)/2)]
+                                        
+                                if (x1_fuera_raiz > x2_fuera_raiz):
+                                    if (aux1 > x2_fuera_raiz and aux1 < x1_fuera_raiz):
+                                        if ( y_arriba[int((contador-1)/2)] > y_aux_abajo):
+                                            if (y_arriba[int((contador-1)/2)] < y_fuera_raiz):
+                                                y_aux_abajo=y_arriba[int((contador-1)/2)]
+                                else:
+                                    if (aux1 > x1_fuera_raiz and aux1 < x2_fuera_raiz):
+                                        if ( y_arriba[int((contador-1)/2)] > y_aux_abajo):
+                                            if (y_arriba[int((contador-1)/2)] < y_fuera_raiz):
+                                                y_aux_abajo=y_arriba[int((contador-1)/2)]
+
+                            contador+=1
+                        
+                        
+                        cont_y=(y_fuera_raiz+y_aux_abajo)/2
+
+                    else:       #Es decir si venimos de un camino en vertical hacia arriba
+                        contador=0
+                        y_aux_arriba=100
+                        y_aux_abajo=0
+                        for x_aux in x_arriba:
+                            if ((contador % 2)==0):
+                                aux1=x_aux
+                            if ((contador % 2)==1):
+
+                                if (x_aux>aux1):
+                                    if (x1_fuera_raiz>aux1 and x1_fuera_raiz < x_aux ):
+                                        if ( y_arriba[int((contador-1)/2)] > cont_y):
+                                            if ( y_arriba[int((contador-1)/2)] < y_aux_arriba):
+                                                y_aux_arriba=y_arriba[int((contador-1)/2)]
+                                else:
+                                    if (x1_fuera_raiz>x_aux and x1_fuera_raiz < aux1 ):
+                                        if ( y_arriba[int((contador-1)/2)] > cont_y):
+                                            if ( y_arriba[int((contador-1)/2)] < y_aux_arriba):
+                                                y_aux_arriba=y_arriba[int((contador-1)/2)]
+
+                                if (x_aux>aux1):
+                                    if (cont_x>x_aux and posicion_x_final < aux1 ):
+                                        if (y_arriba[int((contador-1)/2)] > cont_y):
+                                            if ( y_arriba[int((contador-1)/2)] > y_aux_abajo):
+                                                y_aux_abajo=y_arriba[int((contador-1)/2)]
+                                    
+                                    if (cont_x < aux1 and posicion_x_final > x_aux):
+                                        if (y_arriba[int((contador-1)/2)] > cont_y):
+                                            if ( y_arriba[int((contador-1)/2)] > y_aux_abajo):
+                                                y_aux_abajo=y_arriba[int((contador-1)/2)]
+                                
+                                else:
+                                    if (cont_x>aux1 and posicion_x_final < x_aux ):
+                                        if ( y_arriba[int((contador-1)/2)] > y_aux_abajo):
+                                            y_aux_abajo=y_arriba[int((contador-1)/2)]
+                                    
+                                    if (cont_x < x_aux and posicion_x_final > aux1):
+                                        if ( y_arriba[int((contador-1)/2)] > y_aux_abajo):
+                                            y_aux_abajo=y_arriba[int((contador-1)/2)]
+                            contador+=1
+
+                        if (y_aux_abajo > cont_y):
+                            if (y_aux_arriba==100):
+                                cont_y=y_aux_abajo+0.5
+                            else:
+                                cont_y=(y_aux_arriba+y_aux_abajo)/2
+                        else:
+                            if (y_aux_arriba==100):
+                                cont_y+=0.5
+                            else:
+                                cont_y=(cont_y+y_aux_arriba)/2
+                        
+
+                    
+                punto=[cont_x, cont_y]
+                puntos_aux.append(punto)
+                puntos_aux.append(punto)
+                cont_x=-0.5 #Es decir, donde empieza el segmento del cruce 1
+                punto=[cont_x, cont_y]
+                puntos_aux.append(punto)
+                puntos_aux.append(punto)
+                punto=[cont_x, 0]
+                puntos_aux.append(punto)
             
-                else:
-                    contador=0
+            else:       #Si el valor asociado está en la raíz principal
+
+                if arriba: #Me quiero volver por la el arco más arriba que se pueda construir 
+                    y_aux_arriba=100
+                    y_aux_abajo=0
+
+                    for x_aux in x_arriba:
+                        if ((contador % 2)==0):
+                            aux1=x_aux
+                        if ((contador % 2)==1):
+                            if (x_aux>aux1):
+                                if ((cont_x>aux1 and cont_x < x_aux ) or (posicion_x_final >aux1 and posicion_x_final < x_aux) ):
+                                    if ( y_arriba[int((contador-1)/2)] < y_aux_arriba):
+                                        y_aux_arriba=y_arriba[int((contador-1)/2)]
+                            else:
+                                if ((cont_x>x_aux and cont_x < aux1 ) or (posicion_x_final >x_aux and posicion_x_final < aux1)):
+                                    if ( y_arriba[int((contador-1)/2)] < y_aux_arriba):
+                                        y_aux_arriba=y_arriba[int((contador-1)/2)]
+                                    
+                            if (cont_x > posicion_x_final):
+                                if ((aux1 > posicion_x_final and aux1 < cont_x) and (x_aux > posicion_x_final and x_aux < cont_x)):
+                                    if ( y_arriba[int((contador-1)/2)] > y_aux_abajo):
+                                        y_aux_abajo=y_arriba[int((contador-1)/2)]
+                            else:
+                                if ((aux1 > cont_x and aux1 < posicion_x_final) and  (x_aux > cont_x and x_aux < posicion_x_final)):
+                                    if ( y_arriba[int((contador-1)/2)] > y_aux_abajo):
+                                        y_aux_abajo=y_arriba[int((contador-1)/2)]
+
+                        contador+=1
+                    
+                    if (indice_permutacion!=-1):
+                        if (maximo_raiz_antigua>y_aux_abajo):
+                            y_aux_abajo=maximo_raiz_antigua
+
+                    if (y_aux_arriba==100):
+                        if (y_aux_abajo==0):
+                            cont_y=1
+                        else:
+                            cont_y=y_aux_abajo+0.5
+
+                    else:
+                        if (y_aux_abajo==0):
+                            cont_y=y_aux_arriba/2 #Dividimos entre dos para asegurarnos de que no sea negativo 
+                        else:
+                            cont_y= (y_aux_arriba + y_aux_abajo)/2  
+                    
+
+                    punto=[cont_x, cont_y]
+                    puntos_aux.append(punto)
+                    puntos_aux.append(punto)
+                    cont_x=-0.5 #Es decir, donde empieza el segmento del cruce 1
+                    punto=[cont_x, cont_y]
+                    puntos_aux.append(punto)
+                    puntos_aux.append(punto)
+                    punto=[cont_x, 0]
+                    puntos_aux.append(punto)
+            
+                else:       #if abajo and el valor asociado está en la raiz principal 
                     y_aux_abajo=-100
                     y_aux_arriba=0
+                    contador=0
                     for x_aux in x_abajo:
                         if ((contador % 2)==0):
                             aux1=x_aux
                         if ((contador % 2)==1):
-
-                            print ('x1_fuera_raiz: '+ str(x1_fuera_raiz) + ' x2_fuera_raiz: '+ str(x2_fuera_raiz) + ' aux1: '+ str(aux1) + ' x_aux: '+ str(x_aux))
                             if (x_aux>aux1):
-                                if (x1_fuera_raiz>aux1 and x1_fuera_raiz < x_aux ):
-                                    if (y_abajo[int((contador-1)/2)] < cont_y):
-                                        if ( y_abajo[int((contador-1)/2)] > y_aux_abajo):
-                                            y_aux_abajo=y_abajo[int((contador-1)/2)]
+                                if ((cont_x>aux1 and cont_x < x_aux) or (posicion_x_final >aux1 and posicion_x_final < x_aux) ):
+                                    if ( y_abajo[int((contador-1)/2)] > y_aux_abajo):
+                                        y_aux_abajo=y_abajo[int((contador-1)/2)]
                             else:
-                                if (x1_fuera_raiz>x_aux and x1_fuera_raiz < aux1 ):
-                                    if (y_abajo[int((contador-1)/2)] < cont_y):
-                                        if ( y_abajo[int((contador-1)/2)] > y_aux_abajo):
-                                            y_aux_abajo=y_abajo[int((contador-1)/2)]
-
-                            if (x_aux>aux1):
-                                if (cont_x>x_aux and posicion_x_final < aux1 ):
-                                    if ( y_abajo[int((contador-1)/2)] < y_aux_arriba):
-                                        y_aux_arriba=y_abajo[int((contador-1)/2)]
                                 
-                                if (cont_x < aux1 and posicion_x_final > x_aux):
-                                    if ( y_abajo[int((contador-1)/2)] < y_aux_arriba):
-                                        y_aux_arriba=y_abajo[int((contador-1)/2)]
-                            
-                            else:
-                                if (cont_x>aux1 and posicion_x_final < x_aux ):
-                                    if ( y_abajo[int((contador-1)/2)] < y_aux_arriba):
-                                        y_aux_arriba=y_abajo[int((contador-1)/2)]
-                                
-                                if (cont_x < x_aux and posicion_x_final > aux1):
-                                    if ( y_abajo[int((contador-1)/2)] < y_aux_arriba):
-                                        y_aux_arriba=y_abajo[int((contador-1)/2)]
-
-                        contador+=1
-
-
-                    if (y_aux_arriba< cont_y):
-                        if (y_aux_abajo==-100):
-                            cont_y = y_aux_arriba -0.5
-                        else:
-                            cont_y=(y_aux_arriba+y_aux_abajo)/2
-                    else:
-                        if (y_aux_abajo==-100):
-                            cont_y-=0.5
-                        else:
-                            cont_y=(cont_y+y_aux_abajo)/2
-
-
-
-                        
-
-
-            
-            else:
-                if (puntos_aux[len(puntos_aux)-3][1] >= cont_y):
-                    contador=0
-                    y_aux_arriba=100
-                    y_aux_abajo=0
-                    for x_aux in x_arriba:
-                        if ((contador % 2)==0):
-                            aux1=x_aux
-                        if ((contador % 2)==1):
-                            if (x_aux>aux1):
-                                if (x1_fuera_raiz>aux1 and x1_fuera_raiz < x_aux ):
-                                    if ( y_arriba[int((contador-1)/2)] < y_aux_arriba):
-                                        y_aux_arriba=y_arriba[int((contador-1)/2)]
-                            else:
-                                if (x1_fuera_raiz>x_aux and x1_fuera_raiz < aux1 ):
-                                    if ( y_arriba[int((contador-1)/2)] < y_aux_arriba):
-                                        y_aux_arriba=y_arriba[int((contador-1)/2)]
+                                if ((cont_x>x_aux and cont_x < aux1 ) or (posicion_x_final >x_aux and posicion_x_final < aux1)):
+                                    if ( y_abajo[int((contador-1)/2)] > y_aux_abajo):
+                                        y_aux_abajo=y_abajo[int((contador-1)/2)]
                                     
-                            if (x1_fuera_raiz > x2_fuera_raiz):
-                                if (aux1 > x2_fuera_raiz and aux1 < x1_fuera_raiz):
-                                    if ( y_arriba[int((contador-1)/2)] > y_aux_abajo):
-                                        if (y_arriba[int((contador-1)/2)] < y_fuera_raiz):
-                                            y_aux_abajo=y_arriba[int((contador-1)/2)]
+                            if (cont_x > posicion_x_final):
+                                if ((aux1 > posicion_x_final and aux1 < cont_x) and  (x_aux > posicion_x_final and x_aux < cont_x)):
+                                    if ( y_abajo[int((contador-1)/2)] < y_aux_arriba):
+                                        y_aux_arriba=y_abajo[int((contador-1)/2)]
                             else:
-                                if (aux1 > x1_fuera_raiz and aux1 < x2_fuera_raiz):
-                                    if ( y_arriba[int((contador-1)/2)] > y_aux_abajo):
-                                        if (y_arriba[int((contador-1)/2)] < y_fuera_raiz):
-                                            y_aux_abajo=y_arriba[int((contador-1)/2)]
+                                if ((aux1 > cont_x and aux1 < posicion_x_final)  (x_aux > cont_x and x_aux < posicion_x_final)):
+                                    if ( y_abajo[int((contador-1)/2)] < y_aux_arriba):
+                                        y_aux_arriba=y_abajo[int((contador-1)/2)]
 
-                        contador+=1
-                    
-                    if (puntos_aux[len(puntos_aux)-3][1] < cont_y): #Es decir si venimos de un camino en vertical hacia arriba
-                        if (y_aux_arriba==100):
-                            cont_y=y_fuera_raiz+0.5
-                        else:
-                            cont_y=(y_fuera_raiz+y_aux_arriba)/2
-                    else:
-                        cont_y=(y_fuera_raiz+y_aux_abajo)/2
-                else:
-                    contador=0
-                    y_aux_arriba=100
-                    y_aux_abajo=0
-                    for x_aux in x_arriba:
-                        if ((contador % 2)==0):
-                            aux1=x_aux
-                        if ((contador % 2)==1):
-
-                            if (x_aux>aux1):
-                                if (x1_fuera_raiz>aux1 and x1_fuera_raiz < x_aux ):
-                                    if ( y_arriba[int((contador-1)/2)] > cont_y):
-                                        if ( y_arriba[int((contador-1)/2)] < y_aux_arriba):
-                                            y_aux_arriba=y_arriba[int((contador-1)/2)]
-                            else:
-                                if (x1_fuera_raiz>x_aux and x1_fuera_raiz < aux1 ):
-                                    if ( y_arriba[int((contador-1)/2)] > cont_y):
-                                        if ( y_arriba[int((contador-1)/2)] < y_aux_arriba):
-                                            y_aux_arriba=y_arriba[int((contador-1)/2)]
-
-                            if (x_aux>aux1):
-                                if (cont_x>x_aux and posicion_x_final < aux1 ):
-                                    if (y_arriba[int((contador-1)/2)] > cont_y):
-                                        if ( y_arriba[int((contador-1)/2)] > y_aux_abajo):
-                                            y_aux_abajo=y_arriba[int((contador-1)/2)]
-                                
-                                if (cont_x < aux1 and posicion_x_final > x_aux):
-                                    if (y_arriba[int((contador-1)/2)] > cont_y):
-                                        if ( y_arriba[int((contador-1)/2)] > y_aux_abajo):
-                                            y_aux_abajo=y_arriba[int((contador-1)/2)]
                             
-                            else:
-                                if (cont_x>aux1 and posicion_x_final < x_aux ):
-                                    if ( y_arriba[int((contador-1)/2)] > y_aux_abajo):
-                                        y_aux_abajo=y_arriba[int((contador-1)/2)]
-                                
-                                if (cont_x < x_aux and posicion_x_final > aux1):
-                                    if ( y_arriba[int((contador-1)/2)] > y_aux_abajo):
-                                        y_aux_abajo=y_arriba[int((contador-1)/2)]
                         contador+=1
 
-                    if (y_aux_abajo > cont_y):
-                        if (y_aux_arriba==100):
-                            cont_y=y_aux_abajo+0.5
+
+                    contador=0
+                    for y_aux in y_lista_fuera_raiz:
+                        if (y_aux < 0):
+
+                            if (x_lista_fuera_raiz[2*contador] < x_lista_fuera_raiz[2*contador + 1]):       #Ordenamos las aristas de x_lista_fuera_raiz 
+                                valor_mayor=x_lista_fuera_raiz[2*contador + 1]
+                                valor_menor=x_lista_fuera_raiz[2*contador]
+
+                            else:
+                                valor_mayor=x_lista_fuera_raiz[2*contador]
+                                valor_menor=x_lista_fuera_raiz[2*contador+1]
+                            
+                            if (cont_y <= y_aux):
+                                if ( valor_menor < cont_x and cont_x < valor_mayor  ):
+                                    if (y_aux < y_aux_arriba):    
+                                        y_aux_arriba=y_aux
+                                
+                                
+                            else:
+                                if (cont_x > posicion_x_final):
+                                    if (cont_x > valor_mayor and posicion_x_final < valor_menor):
+                                        if (y_aux < y_aux_arriba):
+                                            y_aux_arriba=y_aux
+                                
+                                else:
+                                    if (posicion_x_final > valor_mayor and cont_x < valor_menor):
+                                        if (y_aux < y_aux_arriba):
+                                            y_aux_arriba=y_aux
+
+
+                                if ( valor_menor < cont_x and cont_x < valor_mayor  ):      #Aquí es donde va a entrar casi siempre
+                                    if (y_aux > y_aux_abajo):
+                                        y_aux_abajo=y_aux
+                            
+                        contador+=1
+                    
+                    if (indice_permutacion!=-1):
+                        if (minimo_raiz_antigua< y_aux_arriba):
+                            y_aux_arriba=minimo_raiz_antigua
+
+
+
+                    if (y_aux_arriba==0):
+                        if (y_aux_abajo==-100):
+                            cont_y=-1
                         else:
-                            cont_y=(y_aux_arriba+y_aux_abajo)/2
+                            cont_y=y_aux_abajo/2
+
                     else:
-                        if (y_aux_arriba==100):
-                            cont_y+=0.5
+                        if (y_aux_abajo==-100):
+                            cont_y=y_aux_arriba - 0.5 #Dividimos entre dos para asegurarnos de que no sea negativo 
                         else:
-                            cont_y=(cont_y+y_aux_arriba)/2
+                            cont_y= (y_aux_arriba + y_aux_abajo)/2  
                     
 
-                
-            punto=[cont_x, cont_y]
-            puntos_aux.append(punto)
-            puntos_aux.append(punto)
-            cont_x=-0.5 #Es decir, donde empieza el segmento del cruce 1
-            punto=[cont_x, cont_y]
-            puntos_aux.append(punto)
-            puntos_aux.append(punto)
-            punto=[cont_x, 0]
-            puntos_aux.append(punto)
-        
+                    punto=[cont_x, cont_y]
+                    puntos_aux.append(punto)
+                    puntos_aux.append(punto)
+                    cont_x=-0.5 #Es decir, donde empieza el segmento del cruce 1
+                    punto=[cont_x, cont_y]
+                    puntos_aux.append(punto)
+                    puntos_aux.append(punto)
+                    punto=[cont_x, 0]
+                    puntos_aux.append(punto)
+            
         else:
-            if arriba: #Me quiero volver por la el arco más arriba que se pueda construir 
-                y_aux_arriba=100
-                y_aux_abajo=0
+            punto=[-0.5, 0]
+            puntos_aux.append(punto)
+            punto=[0.399, 0]
+            puntos_aux.append(punto)
+            punto=[0.4, 0]
+            puntos_aux.append(punto)
+            punto=[0.5,0]
+            puntos_aux.append(punto)
+            puntos_aux.append(punto)
+            punto=[0.5, -1]
+            puntos_aux.append(punto)
+            puntos_aux.append(punto)
+            punto=[0, -1]
+            puntos_aux.append(punto)
+            puntos_aux.append(punto)
+            punto=[-0.5, -1]
+            puntos_aux.append(punto)
+            puntos_aux.append(punto)
+            punto=[-0.5, 0]
+            puntos_aux.append(punto)
 
-                for x_aux in x_arriba:
-                    if ((contador % 2)==0):
-                        aux1=x_aux
-                    if ((contador % 2)==1):
-                        if (x_aux>aux1):
-                            if (cont_x>aux1 and cont_x < x_aux ):
-                                if ( y_arriba[int((contador-1)/2)] < y_aux_arriba):
-                                    y_aux_arriba=y_arriba[int((contador-1)/2)]
-                        else:
-                            if (cont_x>x_aux and cont_x < aux1 ):
-                                if ( y_arriba[int((contador-1)/2)] < y_aux_arriba):
-                                    y_aux_arriba=y_arriba[int((contador-1)/2)]
-                                
-                        if (cont_x > posicion_x_final):
-                            if (aux1 > posicion_x_final and aux1 < cont_x):
-                                if ( y_arriba[int((contador-1)/2)] > y_aux_abajo):
-                                    y_aux_abajo=y_arriba[int((contador-1)/2)]
-                        else:
-                            if (aux1 > cont_x and aux1 < posicion_x_final):
-                                if ( y_arriba[int((contador-1)/2)] > y_aux_abajo):
-                                    y_aux_abajo=y_arriba[int((contador-1)/2)]
-
-                    contador+=1
-                
-                if (indice_permutacion!=-1):
-                    if (maximo_raiz_antigua>y_aux_abajo):
-                        y_aux_abajo=maximo_raiz_antigua
-
-                if (y_aux_arriba==100):
-                    if (y_aux_abajo==0):
-                        cont_y=1
-                    else:
-                        cont_y=y_aux_abajo+0.5
-
-                else:
-                    if (y_aux_abajo==0):
-                        cont_y=y_aux_arriba/2 #Dividimos entre dos para asegurarnos de que no sea negativo 
-                    else:
-                        cont_y= (y_aux_arriba + y_aux_abajo)/2  
-                
-
-                punto=[cont_x, cont_y]
-                puntos_aux.append(punto)
-                puntos_aux.append(punto)
-                cont_x=-0.5 #Es decir, donde empieza el segmento del cruce 1
-                punto=[cont_x, cont_y]
-                puntos_aux.append(punto)
-                puntos_aux.append(punto)
-                punto=[cont_x, 0]
-                puntos_aux.append(punto)
-        
-            else:
-                y_aux_abajo=-100
-                y_aux_arriba=0
-
-                for x_aux in x_abajo:
-                    if ((contador % 2)==0):
-                        aux1=x_aux
-                    if ((contador % 2)==1):
-                        if (x_aux>aux1):
-                            print ('cont_x: '+ str(cont_x) + ' aux1: '+ str(aux1) + ' x_aux: '+ str(x_aux))
-                            if (cont_x>aux1 and cont_x < x_aux ):
-                                if ( y_abajo[int((contador-1)/2)] > y_aux_abajo):
-                                    y_aux_abajo=y_abajo[int((contador-1)/2)]
-                        else:
-                            print ('cont_x: '+ str(cont_x)  + ' x_aux: '+ str(x_aux)+ ' aux1: '+ str(aux1))
-                            if (cont_x>x_aux and cont_x < aux1 ):
-                                if ( y_abajo[int((contador-1)/2)] > y_aux_abajo):
-                                    y_aux_abajo=y_abajo[int((contador-1)/2)]
-                                
-                        if (cont_x > posicion_x_final):
-                            if (aux1 > posicion_x_final and aux1 < cont_x):
-                                if ( y_abajo[int((contador-1)/2)] < y_aux_arriba):
-                                    y_aux_arriba=y_abajo[int((contador-1)/2)]
-                        else:
-                            if (aux1 > cont_x and aux1 < posicion_x_final):
-                                if ( y_abajo[int((contador-1)/2)] < y_aux_arriba):
-                                    y_aux_arriba=y_abajo[int((contador-1)/2)]
-
-                        
-                    contador+=1
-                
-                if (indice_permutacion!=-1):
-                    if (minimo_raiz_antigua< y_aux_arriba):
-                        y_aux_arriba=minimo_raiz_antigua
-
-                print ('y_aux_arriba: ' + str (y_aux_arriba))
-                print ('y_aux_abajo: '+ str(y_aux_abajo))
-
-
-                if (y_aux_arriba==0):
-                    if (y_aux_abajo==-100):
-                        cont_y=-1
-                    else:
-                        cont_y=y_aux_abajo/2
-
-                else:
-                    if (y_aux_abajo==-100):
-                        cont_y=y_aux_arriba - 0.5 #Dividimos entre dos para asegurarnos de que no sea negativo 
-                    else:
-                        cont_y= (y_aux_arriba + y_aux_abajo)/2  
-                
-
-                punto=[cont_x, cont_y]
-                puntos_aux.append(punto)
-                puntos_aux.append(punto)
-                cont_x=-0.5 #Es decir, donde empieza el segmento del cruce 1
-                punto=[cont_x, cont_y]
-                puntos_aux.append(punto)
-                puntos_aux.append(punto)
-                punto=[cont_x, 0]
-                puntos_aux.append(punto)
+    
 
 
         return puntos_aux
        
-    
-#x=Nudo(8, -10, 12, 2, 14, -6, 4) #Mis apuntes
 
-#x=Nudo(-8,10,16,-12,14,-6,-2,4) #nudocap3a5.pdf  
+'''Nudos en notación Dowker, ir descomentando para probarlos todos.'''
+
+'''0 cruces: Nudo trivial'''
+
+x=Nudo()                                                #0₁
+
+
+'''3 cruces: Nudo trebol'''
+
+#x=Nudo(4, 6, 2)                                         #3₁
+
+
+'''4 cruces: Nudo de ocho'''
+
+#x=Nudo(4, 6, 8, 2)                                      #4₁
+
+
+'''5 cruces'''
+
+#x=Nudo (6, 8, 10, 2, 4)                                #5₁
+
+#x=Nudo (4, 8, 10, 2, 6)                                #5₂
+
+
+'''6 cruces'''
+
+#x= Nudo (4, 8, 12, 10, 2, 6)                           #6₁
+
+#x=Nudo(4, 8, 10, 12, 2, 6)                             #6₂
+
+#x= Nudo (4, 8, 10, 2, 12, 6)                           #6₃
+
+
+'''7 cruces'''
+#x=Nudo(8,10,12,14,2,4,6)                               #7₁
+
+#x=Nudo(4,10,14,12,2,8,6)                               #7₂
+
+#x=Nudo(6,10,12,14,2,4,8)                               #7₃
+
+#x=Nudo (6, 10, 12, 14, 4, 2, 8)                        #7₄
+
+#x=Nudo(4, 10, 12, 14, 2, 8, 6)                         #7₅
+
+#x=Nudo (4,8,12,2,14,6,10)                              #7₆
+
+#x=Nudo (4,8,10,12,2,14,6)                              #7₇
+
+'''8 cruces'''
+
+#x=Nudo (4 ,10 ,16 ,14, 12, 2, 8 ,6)                    #8₁
+
+#x=Nudo (4 ,10 ,12 ,14 ,16 ,2 ,6 ,8)                    #8₂
+
+#x=Nudo (6, 12, 10, 16, 14, 4, 2, 8)                    #8₃
+
+#x=Nudo(6 ,10, 12, 16, 14, 4, 2, 8)                     #8₄
+
+#x=Nudo(6 ,8 ,12 ,2 ,14, 16, 4, 10 )                    #8₅
+
+#x=Nudo(4, 10, 14, 16, 12, 2, 8, 6 )                    #8₆
+
+#x=Nudo(4 ,10 ,12 ,14 ,2 ,16 ,6 ,8 )                    #8₇
+
+#x=Nudo(4 ,8 ,12, 2, 16, 14, 6, 10 )                    #8₈
+
+#x=Nudo(6, 10, 12, 14, 16, 4, 2, 8 )                    #8₉
+
+#x=Nudo( 4 ,8 ,12, 2, 14, 16, 6, 10)                    #8₁₀
+
+#x=Nudo(4 ,10, 12, 14 ,16 ,2 ,8, 6 )                    #8₁₁
+
+#x=Nudo(4 ,8 ,14 ,10 ,2 ,16 ,6 ,12 )                    #8₁₂
+
+#x=Nudo( 4 ,10, 12 ,14, 2, 16, 8, 6)                    #8₁₃
+
+#x=Nudo(4 ,8 ,10 ,14 ,2 ,16 ,6 ,12)                     #8₁₄
+
+#x=Nudo (4, 8 ,12, 2 ,14, 6, 16, 10)                    #8₁₅
+
+#x=Nudo ( 6 ,8 ,14 ,12 ,4 ,16 ,2 ,10)                   #8₁₆
+
+#x=Nudo (6 ,8 ,12, 14, 4, 16, 2, 10 )                   #8₁₇
+
+#x=Nudo ( 6 ,8 ,10 ,12 ,14 ,16 ,2 ,4)                   #8₁₈
+
+#x=Nudo (4 ,8 ,-12, 2, -14, -16, -6, -10 )              #8₁₉
+
+#x=Nudo ( 4 ,8 ,-12, 2 ,-14 ,-6 ,-16 ,-10)              #8₂₀
+
+#x=Nudo (4 ,8 ,-12, 2 ,14, -6, 16, 10 )                 #8₂₁
+
+
+'''9 cruces'''  
+
+#x=Nudo (10, 12 ,14 ,16 ,18, 2, 4, 6, 8 )               #9₁
+
+#x=Nudo (4 ,12, 18, 16 ,14 ,2 ,10 ,8 ,6 )               #9₂
+
+#x=Nudo (8 ,12, 14, 16, 18, 2, 4, 6, 10	 )              #9₃
+
+#x=Nudo (6, 12, 14, 18, 16, 2, 4 ,10, 8	 )              #9₄
+
+#x=Nudo (6, 12, 14, 18, 16, 4, 2, 10, 8	)               #9₅
+
+#x=Nudo (4, 12 ,14, 16, 18, 2, 10, 6, 8 )               #9₆
+
+#x=Nudo (4, 12, 16, 18, 14, 2, 10, 8, 6)                #9₇
+
+#x=Nudo (4 ,8 ,14, 2, 18, 16, 6, 12, 10)                #9₈
+
+#x=Nudo (6, 12, 14, 16, 18, 2, 4, 10, 8 )               #9₉
+
+#x=Nudo ( 8 ,12 ,14 ,16, 18 ,2 ,6 ,4 ,10)               #9₁₀
+
+#x=Nudo ( 4 ,10, 14, 16, 12, 2, 18, 6, 8)               #9₁₁
+
+#x=Nudo (4 ,10, 16, 14, 2, 18, 8, 6 ,12 )               #9₁₂
+
+#x=Nudo (6, 12, 14, 16, 18, 4, 2, 10, 8 )               #9₁₃
+
+#x=Nudo (4 ,10, 12, 16, 14, 2, 18, 8, 6 )               #9₁₄
+
+#x=Nudo (4, 8, 14, 10, 2 ,18, 16, 6, 12 )               #9₁₅
+
+#x=Nudo (4, 12, 16, 18 ,14, 2, 8, 10, 6 )               #9₁₆
+
+#x=Nudo ( 4, 10, 12, 14, 16, 2, 6, 18, 8)               #9₁₇  
+
+#x=Nudo (4, 12, 14, 16, 18, 2 ,10, 8, 6 )               #9₁₈
+
+#x=Nudo (4, 8, 10, 14, 2, 18, 16, 6 ,12 )               #9₁₉
+
+#x=Nudo ( 4, 10, 14, 16, 2, 18, 8, 6, 12)               #9₂₀
+
+#x=Nudo (4, 10, 14, 16, 12, 2, 18, 8, 6 )               #9₂₁
+
+#x=Nudo ( 4, 8, 10, 14, 2, 16, 18, 6, 12)               #9₂₂
+
+#x=Nudo (4, 10, 12, 16, 2, 8, 18, 6, 14 )               #9₂₃
+
+#x=Nudo (4, 8, 14, 2, 16, 18, 6, 12, 10 )               #9₂₄
+
+#x=Nudo (4, 8, 12, 2, 16, 6, 18, 10, 14 )               #9₂₅
+
+#x=Nudo (4, 10, 12, 14, 16, 2, 18, 8, 6)                #9₂₆
+
+#x=Nudo (4, 10, 12, 14, 2, 18, 16, 6, 8 )               #9₂₇
+
+#x=Nudo (4, 8, 12, 2, 16, 14, 6, 18, 10 )               #9₂₈    
+
+#x=Nudo (6, 10 ,14, 18 ,4 ,16 ,8 ,2 ,12 )               #9₂₉
+
+#x=Nudo (4 ,8 ,10 ,14 ,2 ,16, 6 ,18, 12)                #9₃₀
+
+#x=Nudo (4, 10, 12, 14, 2 ,18, 16, 8, 6 )               #9₃₁
+
+#x=Nudo (4 ,8 ,12 ,14 ,2 ,16 ,18 ,10, 6 )               #9₃₂
+
+#x=Nudo (4 ,8 ,14 ,12 ,2 ,16, 18, 10, 6 )               #9₃₃
+
+#x=Nudo (6 ,8 ,10 ,16 ,14 ,18, 4, 2, 12 )               #9₃₄
+
+#x=Nudo (8, 12, 16, 14, 18, 4 ,2 ,6 ,10 )               #9₃₅
+
+#x=Nudo (4 ,8 ,14 ,10 ,2 ,16 ,18, 6 ,12 )               #9₃₆
+
+#x=Nudo (4 ,10, 14 ,12, 16, 2 ,6, 18, 8 )               #9₃₇
+
+#x=Nudo (6 ,10 ,14, 18, 4 ,16, 2, 8 ,12 )               #9₃₈
+
+#x=Nudo (6 ,10, 14, 18, 16, 2, 8, 4, 12 )               #9₃₉    
+
+#x=Nudo (6 ,16, 14, 12, 4, 2, 18 ,10, 8)                #9₄₀
+
+#x=Nudo (6 ,10 ,14, 12, 16, 2 ,18, 4, 8 )               #9₄₁
+
+#x=Nudo (4 ,8 ,10, -14, 2, -16, -18, -6, -12)           #9₄₂
+
+#x=Nudo (4 ,8 ,10, 14, 2 ,-16, 6 ,-18 ,-12 )            #9₄₃
+
+#x=Nudo (4 ,8, 10, -14, 2, -16, -6 ,-18 ,-12)           #9₄₄
+
+#x=Nudo (4 ,8, 10 ,-14 ,2 ,16, -6 ,18 ,12 )             #9₄₅
+
+#x=Nudo (4 ,10, -14, -12, -16, 2 ,-6 ,-18, -8 )         #9₄₆
+
+#x=Nudo (6 ,8 ,10 ,16 ,14 ,-18, 4 ,2 ,-12 )             #9₄₇
+
+#x=Nudo (4 ,10, -14 ,-12, 16, 2, -6, 18, 8)             #9₄₈
+
+#x=Nudo (6 ,-10, -14, 12, -16, -2, 18, -4, -8)          #9₄₉
+
+
+
+
+'''Otros nudos'''
+
+#x=Nudo(8, -10, 12, 2, 14, -6, 4)                       
+
+#x=Nudo(-8,10,16,-12,14,-6,-2,4) 
 
 #x=Nudo(4,6,2, 10, 12, 8)
 
 #x=Nudo (6, 10, 2, 12, 4, 8)
 
-#x=Nudo(8, 10, 12, 2, 6, 4)         #https://www.youtube.com/watch?v=3o5CMWZ9qvo&ab_channel=MatthewSalomone
+#x=Nudo(8, 10, 12, 2, 6, 4)         
 
-#x=Nudo (8,14,12,10,2,6,4)               #video de arriba
+#x=Nudo (8,14,12,10,2,6,4)              
 
-#x=Nudo (8,10,2,12,4, 6)                 #http://katlas.org/wiki/DT_(Dowker-Thistlethwaite)_Codes
+#x=Nudo (8,10,2,12,4, 6)                 
 
-#x=Nudo(6,10,14,12,16,2,18,4,8)                  #http://katlas.org/wiki/DT_(Dowker-Thistlethwaite)_Codes
+#x=Nudo(6,10,14,12,16,2,18,4,8)                  
 
-x=Nudo(4, 8, 10, -14, 2, -16, -18, -6, -12)         #http://katlas.org/wiki/DT_(Dowker-Thistlethwaite)_Codes
+#x=Nudo(4, 8, 10, -14, 2, -16, -18, -6, -12)                
+
+#x=Nudo(12, 8, 14, 10, 4, 2, 6)              
+
+#x=Nudo(12,8,-10,-14,16,-6,2,-4)
+
+#x=Nudo(10,14,16,12,6,2,8,4)                                    #Nudo en el que se utiliza la recursividad
+
+#x=Nudo (16, 18, 20, -22, 4, 2, 8, -6, 12, 10, -14)             #Nudo en el que se da la vuelta varias veces
+
+#x=Nudo(6, -12, 2, 8, -4, -10)                                  #Nudo en el que se elimina un lazo 
+
+
 
 puntos=x.obtener_puntos_nudo_dowker()
 
@@ -4639,7 +6240,7 @@ vector_cambio=x.dividir_nudo_en_arcos(puntos)
 
 aristas=x.obtener_aristas(puntos)
 
-print("Numero arcos superiores: "+ str(x.numero_arcos_superiores()))
+print("Número de arcos superiores del nudo: "+ str(x.numero_arcos_superiores()))
 
 puntos_ui=x.obtener_caminos_ui(puntos, aristas, vector_cambio)
 
@@ -4647,22 +6248,55 @@ puntos_vi=x.obtener_caminos_vi (puntos, aristas, vector_cambio)
 
 presentacion_superior=x.obtener_presentacion_superior(puntos_vi, puntos, vector_cambio)
 
-print("Presentación superior del grupo del nudo: ")
+print("\nPresentación superior del grupo del nudo: ")
 
 x.representar_presentacion_superior(presentacion_superior)
 
+print('Zoom a los números que acompañan a los símbolos "x" de los relatores de la presentación superior:')
+
+print(presentacion_superior)
+
 presentacion_inferior=x.obtener_presentacion_inferior(puntos_ui, puntos, vector_cambio)
 
-print("Presentación inferior del grupo del nudo: ")
+print("\nPresentación inferior del grupo del nudo: ")
 
 x.representar_presentacion_inferior(presentacion_inferior)
 
-x.dibujar_caminos_ui(puntos, puntos_ui, vector_cambio)
+print('Zoom a los números que acompañan a los símbolos "y" de los relatores de la presentación inferior:')
 
-x.dibujar_nudo_arcos(puntos, vector_cambio)
+print(presentacion_inferior)
 
-x.dibujar_caminos_vi(puntos, puntos_vi, vector_cambio)
+
+'''Estas son las diferentes gráficas que hemos construido:
+        1ª.- dibujar_nudo: Se dibuja la proyección del nudo. 
+        2ª.- dibujar_nudo_arcos: Se dibuja la proyección del nudo dividido en arcos superiores (color azul) y arcos inferiores (color rojo), estando etiquetado cada uno de estos arcos y señalados con color verde los puntos del conjunto Q. 
+        3ª.- dibujar_caminos_ui: Se dibuja la proyección del nudo dividido en arcos, junto con los caminos v_i (representados con color verde) y los espacios V_i (representados con color rojo).
+        4ª.- dibujar_caminos_vi: Se dibuja la proyección del nudo dividido en arcos, junto con los caminos u_i (representados con color morado) y los espacios U_i (representados con color azul).
+
+    Descomentar y comentar las llamadas a función que hay a continuación para visualizar los distintos gráficos. 
+'''
 
 x.dibujar_nudo(puntos)
+
+#x.dibujar_nudo_arcos(puntos, vector_cambio)
+
+#x.dibujar_caminos_vi(puntos, puntos_vi, vector_cambio)
+
+#x.dibujar_caminos_ui(puntos, puntos_ui, vector_cambio)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 sys.exit()
