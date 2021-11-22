@@ -5,15 +5,15 @@ Created on Tue Oct  5 18:15:35 2021
 
 @author: inaki
 """
-import sys #Para hacer el sys.exit
+import sys                  #Para hacer el sys.exit
 
-import copy #Para el constructor de copia que no hace falta
+import copy                 #Para realizar copias deepcopy de las variables locales del método obtener obtener_puntos_nudo_dowker por si acaso hay que volver a un estado anterior
 
-from turtle import *
+from turtle import *        #Para importar el módulo Turtle de Python
 
-setup(2000, 600, 0,0)
+setup(2000, 600, 0,0)       #Para modificar las dimensiones de la ventana emergente de Turtle
 
-speed(60)
+speed(5)                    #Para modificar la velocidad con la que Turtle dibujará los diagramas de los nudos
 
 
 class Nudo:
@@ -29,7 +29,11 @@ class Nudo:
         for x in range(len(numeros)):
             self.__numeros.append(numeros[x])
         
+        if (self.__comprobar_notacion_correcta()==False):
+            raise TypeError("La notación Dowker introducida no es correcta")
+
         self.__eliminar_lazos()
+        
         print(self.__numeros)
 
     def __eliminar_lazos(self):
@@ -73,6 +77,48 @@ class Nudo:
                         self.__numeros[contador]+=2
             contador+=1   
     
+    def __comprobar_notacion_correcta(self):
+        '''Método que dada la secuencia de números pares de la notación Dowker del nudo que queremos representar, almacenada en self.__numeros, devuelve True si es una notación Dowker válida y False en caso contrario.
+        Recordemos que una secuencia de números es una notación Dowker válida si contiene en valor absoluto, todos los números pares desde el 2 hasta el 2*n siendo n la longitud de dicha secuencia.
+        Este método tan sólo es llamado por el constructor de la clase Nudo cuando se instancia un objeto, ya que no tiene sentido tratar con un objeto de tipo Nudo cuya notación Dowker asociada no es realmente una notación Dowker.
+        
+        Ejemplo:
+            >>> x=Nudo(6, -12, 2, -10, -4, 8)
+            >>> __comprobar_notacion_correcta()
+            True 
+
+            #Esto se debe a que contiene en valor absoluto todos los números pares desde el 2 hasta el 12
+
+            >>> x=Nudo(6, 10, 2, -10, -4, 8)
+            >>> __comprobar_notacion_correcta()
+            False
+
+            #La salida es False porque dicha secuencia es de longitud 6 y no contiene ni el valor 12 ni el -12
+     
+        '''
+
+        notacionCorrecta=True
+        lista_aux=[]
+        for i in range(len(self.__numeros)):
+            lista_aux.append(2*i+2)
+        
+        for j in self.__numeros:
+            if (abs(j) in lista_aux):
+                indices_eliminar=[]
+                contador=0
+                for k in lista_aux:
+                    if (abs(j)==k):
+                        indices_eliminar.append(contador)
+                    contador+=1
+                
+                for l in indices_eliminar:
+                    lista_aux.pop(l)
+                
+            else:
+                notacionCorrecta=False
+        
+        return notacionCorrecta
+
     def numero_arcos_superiores(self):
         '''
         Devuelve el número de arcos superiores que tendrá el nudo. 
@@ -306,6 +352,7 @@ class Nudo:
 
         #Esto es para dibujar la flecha, que indicará la orientación del nudo
         penup()
+
         punto_aux=[-0.38*100, 0.07*100]
         goto(punto_aux)
         begin_fill()
@@ -317,7 +364,7 @@ class Nudo:
         punto_aux=[-0.38*100, 0.07*100]
         goto(punto_aux)
         end_fill()
-
+    
         hideturtle()
         exitonclick()
         Screen().bye()
@@ -853,7 +900,7 @@ class Nudo:
         aristas.append(aristas_verticales)
         return aristas
 
-    def __obtener_aristas_inferiores_ordenadas(self, puntos, vector_cambio):
+    def __obtener_aristas_inferiores_orientadas(self, puntos, vector_cambio):
         '''
         Dada la lista de puntos del nudo, obtiene las aristas horizontales y verticales de los arcos inferiores de este y las devuelve,
         en una lista con dos elementos, siendo el primero de ellos una lista de las aristas horizontales y el segundo 
@@ -1004,7 +1051,7 @@ class Nudo:
         
         return aristas
 
-    def __obtener_aristas_superiores_ordenadas(self, puntos, vector_cambio):
+    def __obtener_aristas_superiores_orientadas(self, puntos, vector_cambio):
         '''
         Dada la lista de puntos del nudo, obtiene las aristas horizontales y verticales de los arcos superiores de este y las devuelve,
         en una lista con dos elementos, siendo el primero de ellos una lista de las aristas horizontales y el segundo 
@@ -2432,7 +2479,7 @@ class Nudo:
 
         Args:
             segmento: Lista de dos puntos, siendo los dos puntos de la arista_horizontal de u_i o v_i que estamos analizando.
-            arista_vertical: Arista vertical ordenada, es decir, un elemento de la lista obtenida de la función __obtener_aristas_inferiores_ordenadas u __obtener_aristas_superiores_ordenadas
+            arista_vertical: Arista vertical ordenada, es decir, un elemento de la lista obtenida de la función __obtener_aristas_inferiores_orientadas u __obtener_aristas_superiores_orientadas
         '''
 
         if (arista_vertical[1] > arista_vertical[2]):
@@ -2458,7 +2505,7 @@ class Nudo:
 
         Args:
             segmento: Lista de dos puntos, siendo los dos puntos de la arista_vertical de u_i o v_i que estamos analizando.
-            arista_horizontal: Arista horizontal ordenada, es decir, un elemento de la lista obtenida de la función __obtener_aristas_inferiores_ordenadas u __obtener_aristas_superiores_ordenadas
+            arista_horizontal: Arista horizontal ordenada, es decir, un elemento de la lista obtenida de la función __obtener_aristas_inferiores_orientadas u __obtener_aristas_superiores_orientadas
         '''
         if (arista_horizontal[1] < arista_horizontal[2]):
             if (segmento[0][1] > segmento[1][1]):
@@ -2760,7 +2807,7 @@ class Nudo:
 
         presentacion_superior=[]
 
-        aristas_superiores=self.__obtener_aristas_superiores_ordenadas(puntos, vector_cambio)
+        aristas_superiores=self.__obtener_aristas_superiores_orientadas(puntos, vector_cambio)
 
         if (len(self.__numeros)>0):
             if (self.__numeros[0]<0):      #Hay que reordenar el vector de aristas
@@ -2824,7 +2871,7 @@ class Nudo:
 
         presentacion_inferior=[]
         
-        aristas_inferiores=self.__obtener_aristas_inferiores_ordenadas(puntos, vector_cambio)
+        aristas_inferiores=self.__obtener_aristas_inferiores_orientadas(puntos, vector_cambio)
 
         for x in puntos_ui:
             lista_indices_i_so=[]
@@ -6001,8 +6048,6 @@ class Nudo:
             puntos_aux.append(punto)
 
     
-
-
         return puntos_aux
        
 
@@ -6010,7 +6055,7 @@ class Nudo:
 
 '''0 cruces: Nudo trivial'''
 
-x=Nudo()                                                #0₁
+#x=Nudo()                                                #0₁
 
 
 '''3 cruces: Nudo trebol'''
@@ -6123,7 +6168,7 @@ x=Nudo()                                                #0₁
 
 #x=Nudo ( 4 ,10, 14, 16, 12, 2, 18, 6, 8)               #9₁₁
 
-#x=Nudo (4 ,10, 16, 14, 2, 18, 8, 6 ,12 )               #9₁₂
+x=Nudo (4 ,10, 16, 14, 2, 18, 8, 6 ,12 )               #9₁₂
 
 #x=Nudo (6, 12, 14, 16, 18, 4, 2, 10, 8 )               #9₁₃
 
@@ -6212,7 +6257,7 @@ x=Nudo()                                                #0₁
 
 #x=Nudo (6, 10, 2, 12, 4, 8)
 
-#x=Nudo(8, 10, 12, 2, 6, 4)         
+#x=Nudo(8, -10, 12, -2, 6, 4)         
 
 #x=Nudo (8,14,12,10,2,6,4)              
 
@@ -6231,6 +6276,7 @@ x=Nudo()                                                #0₁
 #x=Nudo (16, 18, 20, -22, 4, 2, 8, -6, 12, 10, -14)             #Nudo en el que se da la vuelta varias veces
 
 #x=Nudo(6, -12, 2, 8, -4, -10)                                  #Nudo en el que se elimina un lazo 
+
 
 
 
@@ -6276,25 +6322,15 @@ print(presentacion_inferior)
     Descomentar y comentar las llamadas a función que hay a continuación para visualizar los distintos gráficos. 
 '''
 
-x.dibujar_nudo(puntos)
+
+
+#x.dibujar_nudo(puntos)
 
 #x.dibujar_nudo_arcos(puntos, vector_cambio)
 
 #x.dibujar_caminos_vi(puntos, puntos_vi, vector_cambio)
 
-#x.dibujar_caminos_ui(puntos, puntos_ui, vector_cambio)
-
-
-
-
-
-
-
-
-
-
-
-
+x.dibujar_caminos_ui(puntos, puntos_ui, vector_cambio)
 
 
 
